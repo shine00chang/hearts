@@ -2,10 +2,10 @@
   "name": "hearts",
   "version": "1.0.0",
   "description": "*Login* - user field - password field - login button - signup button",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/app.js",
+    "dbtest": "node src/dbtest.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
   "homepage": "https://github.com/shine00chang/hearts#readme",
   "dependencies": {
     "dotenv": "^17.2.4",
+    "express": "^5.2.1",
     "pg": "^8.18.0"
   }
 }

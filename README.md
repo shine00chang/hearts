@@ -44,9 +44,10 @@
 
 /game/own GET: returns your own games
 
-**Internal functions**
+**Notable Internal Functions**
 post-game-result() : tallies game results to user stats and updates leaderboard 
 get-user-display() : returns user properties relevant to displaying them (used for rooms and game start)
+get-leaderboard() : leaderboard query
 
 ## Websocket Flow
 **Room**
