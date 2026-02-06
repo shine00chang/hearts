@@ -1,0 +1,26 @@
+{
+  "name": "hearts",
+  "version": "1.0.0",
+  "description": "*Login* - user field - password field - login button - signup button",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shine00chang/hearts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/shine00chang/hearts/issues"
+  },
+  "homepage": "https://github.com/shine00chang/hearts#readme",
+  "dependencies": {
+    "dotenv": "^17.2.4",
+    "pg": "^8.18.0"
+  }
+}
