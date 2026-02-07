@@ -60,3 +60,32 @@ server commands:
 
 **Game**
 I don't know yet
+
+# Database
+**user**
+- id (SERIAL PRIMARY KEY)
+- username (UNIQUE)
+- password_hash
+
+**game**
+- game_id (SERIAL PRIMARY KEY)
+- timestamp
+- status (in progress or done)
+
+**round**
+- round_id (SERIAL PRIMARY KEY)
+- game_id
+- round_number
+- timestamp
+
+**round_result**
+- user_id (foreign key)
+- round_id (foreign key)
+- score
+- primary key is (user_id, round_id)
+
+**game_users**
+- game_id (foreign key)
+- player_id (foreign key)
+- seat (0-3)
+- primary key is (game_id, player_id)

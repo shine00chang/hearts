@@ -1,16 +1,15 @@
-import "dotenv/config";
-import { query, pool } from "./database.js";
+import * as db from './database.js'
 
 async function main() {
   try {
-    await pool.query(`
+    await db.query(`
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL
 );
 `);
-    await pool.query(`
+    await db.query(`
 INSERT INTO users (username, password_hash)
 VALUES
   ('a', 'a_pwd'),
@@ -18,8 +17,6 @@ VALUES
 `);
   } catch (err) {
     console.error("DB error:", err);
-  } finally {
-    await pool.end();
   }
 }
 
