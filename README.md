@@ -25,8 +25,6 @@
 *Room*
 - display users
 - ready button
-
-*Game*
 - make something that: server collects a string from each player, sends the concatenated string back.
 - just to mock up a websocket connection with the game flow
 
@@ -38,8 +36,8 @@
 /board/get GET
 
 /room/get GET: returns public rooms
-/room/create POST
-/room/join POST
+/room/create POST: redirects to room with room code. the room page will then try to connect to the room WS with that code.
+/room/join POST: redirects to room with room code
 *Note: Room leave ready/unready is handled by websocket. since start needs to be pushed*
 
 /game/own GET: returns your own games
@@ -62,20 +60,3 @@ server commands:
 
 **Game**
 I don't know yet
-
-# Database
-**user**
-- ID
-- username
-- password
-
-**game**
-- timestamp
-- ID1
-- ID2
-- ID3
-- ID4
-- score1
-- score2
-- score3
-- score4
