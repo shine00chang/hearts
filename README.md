@@ -49,6 +49,7 @@ get-leaderboard() : leaderboard query
 
 ## Websocket Flow
 **Room**
+
 Client -> Server commands:
 - 'ready': player marks themselves as ready
 - 'unready': player marks themselves as not ready
