@@ -56,9 +56,9 @@ Client -> Server commands:
 - 'leave': player explicitly leaves room
 
 Server -> Client commands:
-- 'state': full room state '{ users: Array, readyState: Map }'
-- 'start': start game (all 4 players ready)
-- 'error': client rejected from full 4 player room
+- 'state': full room state '{ id: roomId, users: Array, readyState: Map }'
+- 'start': start game (all 4 players ready). From this point on, room state should include game state.
+- 'nojoin': client cannot join room
 - 'disconnect': server closes connection
 
 **Game**

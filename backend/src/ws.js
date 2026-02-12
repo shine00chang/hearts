@@ -17,15 +17,29 @@ export default function setWS (server) {
 function setSocket (socket, io) 
 {
   const { session } = socket.handshake.auth;
-  const { roomId } = socket.handshake.query;
+  let { roomId } = socket.handshake.query;
 
   const user = wsauth(session);
 
-  console.log(`user connected requesting roomId: ${roomId}, with session token: ${session}`);
+  if (typeof roomId == 'string' && roomId.length == 4) {
+    console.log(`user connected requesting roomId: ${roomId}, with session token: ${session}`);
+  } else {
+    const genId = _ => {
+      const v = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let out = "";
+      do {
+        for (let i=0; i<4; i++) out += v.charAt(Math.floor(Math.random()*v.length));
+      } while (rooms.has(out));
+      return out;
+    }
+    roomId = genId();
+    console.log(`user connected with undefined roomId, creating room ${roomId}, with session token: ${session}`);
+  }
 
   // 4 player limit check
   if (rooms.has(roomId) && rooms.get(roomId).users.length >= 4) {
-    socket.emit('error', { message: 'Room is full' });
+    console.log('room full, rejecting user');
+    socket.emit('nojoin', { message: 'Room is full' });
     socket.disconnect();
     return;
   }
@@ -34,6 +48,7 @@ function setSocket (socket, io)
 
   if (!rooms.has(roomId)) {
     rooms.set(roomId, {
+      id: roomId,
       users: [],
       readyState: new Map()
     });
@@ -55,6 +70,7 @@ function setSocket (socket, io)
   // TODO: Handle leave event
 
   socket.on('disconnect', _ => {
+    // TODO: remove from room
     console.log('user disconnected');
   });
 }

@@ -15,5 +15,8 @@ export function wsauth (session)
 {
   // TODO: Check signed session cookie
    
-  return true;
+  return {
+    id: 'xyz',
+    username: 'turtle',
+  };
 }
