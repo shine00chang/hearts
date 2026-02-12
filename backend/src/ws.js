@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { wsauth } from './auth.js';
 
 // Mock room storage (Change to appropriate db queries later)
 const rooms = new Map();
@@ -18,9 +19,7 @@ function setSocket (socket, io)
   const { session } = socket.handshake.auth;
   const { roomId } = socket.handshake.query;
 
-  // TODO: Add authentication features
-  // TODO: Extract userId from session token (Depending on how frontend implements)
-  let currentUserId; // Mock for now
+  const user = wsauth(session);
 
   console.log(`user connected requesting roomId: ${roomId}, with session token: ${session}`);
 
@@ -36,21 +35,17 @@ function setSocket (socket, io)
   }
 
   const room = rooms.get(roomId);
-  const userData = {
-    userId: currentUserId,
-    socketId: socket.id,
-    username: 'Player' // Get actual username from database
-  };
   
-  room.users.push(userData);
-  room.readyState.set(currentUserId, false); // All players start as 'not ready' after joining room
+  // Add user
+  room.users.push(user);
+  room.readyState.set(user.id, false); // All players start as 'not ready' after joining room
 
   // Broadcast state whenever a new player joins
   emitRoomState(io, roomId);
 
   // ready + unready event handling 
-  socket.on('ready', () => handleReady(io, roomId, currentUserId));
-  socket.on('unready', () => handleUnready(io, roomId, currentUserId));
+  socket.on('ready', () => handleReady(io, roomId, user.id));
+  socket.on('unready', () => handleUnready(io, roomId, user.id));
 
   // TODO: Handle leave + disconnect events
 
@@ -60,8 +55,7 @@ function setSocket (socket, io)
 }
 
 function emitRoomState (io, roomId) {
-  io.to(roomId).emit('users', rooms.get(roomId).users);
-  io.to(roomId).emit('readystate', Array.from(rooms.get(roomId).readyState.entries()))
+  io.to(roomId).emit('state', rooms.get(roomId));
 }
 
 function handleReady (io, roomId, userId) {
