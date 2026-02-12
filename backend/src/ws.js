@@ -23,7 +23,12 @@ function setSocket (socket, io)
 
   console.log(`user connected requesting roomId: ${roomId}, with session token: ${session}`);
 
-  // TODO: Add a 4 player limit check
+  // 4 player limit check
+  if (rooms.has(roomId) && rooms.get(roomId).users.length >= 4) {
+    socket.emit('error', { message: 'Room is full' });
+    socket.disconnect();
+    return;
+  }
 
   socket.join(roomId);
 
@@ -47,7 +52,7 @@ function setSocket (socket, io)
   socket.on('ready', () => handleReady(io, roomId, user.id));
   socket.on('unready', () => handleUnready(io, roomId, user.id));
 
-  // TODO: Handle leave + disconnect events
+  // TODO: Handle leave event
 
   socket.on('disconnect', _ => {
     console.log('user disconnected');

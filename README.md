@@ -49,14 +49,16 @@ get-leaderboard() : leaderboard query
 
 ## Websocket Flow
 **Room**
-client commands:
-- ready
-- unready
-- leave
-server commands:
-- users: sends a list of room user's display data, including self
-- readystate: sends a list of user's ready state
-- start
+Client -> Server commands:
+- 'ready': player marks themselves as ready
+- 'unready': player marks themselves as not ready
+- 'leave': player explicitly leaves room
+
+Server -> Client commands:
+- 'state': full room state '{ users: Array, readyState: Map }'
+- 'start': start game (all 4 players ready)
+- 'error': client rejected from full 4 player room
+- 'disconnect': server closes connection
 
 **Game**
 I don't know yet
