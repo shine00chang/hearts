@@ -63,15 +63,13 @@ function setSocket (socket, io)
   // Broadcast state whenever a new player joins
   emitRoomState(io, roomId);
 
-  // ready + unready event handling 
+  // ready, unready, leave, and disconnect event handling 
   socket.on('ready', () => handleReady(io, roomId, user.id));
   socket.on('unready', () => handleUnready(io, roomId, user.id));
-
-  // TODO: Handle leave event
-
-  socket.on('disconnect', _ => {
-    // TODO: remove from room
+  socket.on('leave', () => handleLeave(io, roomId, user.id));
+  socket.on('disconnect', () => {
     console.log('user disconnected');
+    handleLeave(io, roomId, user.id);
   });
 }
 
@@ -106,4 +104,22 @@ function handleUnready (io, roomId, userId) {
   const curRoom = rooms.get(roomId);
   curRoom.readyState.set(userId, false);
   emitRoomState(io, roomId); // Display some "player_username not ready" message
+}
+
+function handleLeave (io, roomId, userId) {
+  console.log(`User ${userId} leaving room ${roomId}`);
+  const room = rooms.get(roomId);
+
+  // remove user from room
+  room.users = rooms.get(roomId).users.filter(u => u.id !== userId);
+  room.readyState.delete(userId);
+
+  // if room is empty, delete it
+  if (room.users.length === 0) {
+    console.log(`Room ${roomId} is now empty. Deleting`);
+    rooms.delete(roomId);
+    return;
+  }
+
+  emitRoomState(io, roomId);
 }
