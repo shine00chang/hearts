@@ -53,7 +53,7 @@ get-leaderboard() : leaderboard query
 Client -> Server commands:
 - 'ready': player marks themselves as ready
 - 'unready': player marks themselves as not ready
-- 'leave': player explicitly leaves room (if no players are in the room, delete the room)
+- 'leave': player explicitly leaves room (if no players are in the room, server delete the room)
 - 'disconnect': player disconnects from the room
 
 Server -> Client commands:
