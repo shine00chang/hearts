@@ -65,15 +65,16 @@ Server -> Client commands:
 **Game**
 
 Client -> Server commands:
-- 'selectpass': Player toggles a card to pass to another player
-- 'pass': Player wants to send 3 selected cards to another player
-- 'play': 
+- 'selectpass': Player toggles a card to pass to another player (should be a single card object) '{ suit: 'S' or 'C' or 'D' or 'H', value: '2' to 'A' }'
+- 'pass': Player ready to send 3 selected cards to another player
+- 'play': Player plays a card for the round's current cycle (should be a single card object like 'selectpass')
 
 Server -> Client
 - 'deal': Server sends 13 cards to each player (privately)
-- 'illegalmove': Server emits to a player (privately) that their move was illegal
-- 'cardoff': Player (legally) deselects a card they want to send to another player 
 - 'cardon': Player (legally) selects a card they want to send to another player
+- 'cardoff': Player (legally) deselects a card they want to send to another player 
+- 'passdone': Server updated the hand of each individual player after shift '{ hand: Card array, phase: 'passing' or 'playing' or 'done' }'
+- 'illegalmove': Server emits to a player (privately) that their move was illegal
 
 # Database
 **user**

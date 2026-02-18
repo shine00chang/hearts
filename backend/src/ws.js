@@ -76,6 +76,9 @@ function setSocket (socket, io)
 
   // selectpass event handling
   socket.on('selectpass', (card) => handleSelectPass(io, roomId, user.id, card));
+
+  // TODO: Add pass event handling (Users lock in their cards for passing)
+  // TODO: Add makemove event handling (Users play a card down; Add appropriate game logic)
 }
 
 // EVENT HANDLERS: 
