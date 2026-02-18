@@ -63,7 +63,17 @@ Server -> Client commands:
 - 'disconnect': server closes connection
 
 **Game**
-I don't know yet
+
+Client -> Server commands:
+- 'selectpass': Player toggles a card to pass to another player
+- 'pass': Player wants to send 3 selected cards to another player
+- 'play': 
+
+Server -> Client
+- 'deal': Server sends 13 cards to each player (privately)
+- 'illegalmove': Server emits to a player (privately) that their move was illegal
+- 'cardoff': Player (legally) deselects a card they want to send to another player 
+- 'cardon': Player (legally) selects a card they want to send to another player
 
 # Database
 **user**

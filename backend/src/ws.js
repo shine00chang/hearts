@@ -3,6 +3,7 @@ import { wsauth } from './auth.js';
 
 // Mock room storage (Change to appropriate db queries later)
 const rooms = new Map();
+const socketIdMap = new Map();
 
 export default function setWS (server) {
   const io = new Server(server, {
@@ -59,6 +60,7 @@ function setSocket (socket, io)
   // Add user
   room.users.push(user);
   room.readyState.set(user.id, false); // All players start as 'not ready' after joining room
+  socketIdMap.set(user.id, socket.id); // Map a new user to their socket id
 
   // Broadcast state whenever a new player joins
   emitRoomState(io, roomId);
@@ -71,7 +73,12 @@ function setSocket (socket, io)
     console.log('user disconnected');
     handleLeave(io, roomId, user.id);
   });
+
+  // selectpass event handling
+  socket.on('selectpass', (card) => handleSelectPass(io, roomId, user.id, card));
 }
+
+// EVENT HANDLERS: 
 
 function emitRoomState (io, roomId) {
   io.to(roomId).emit('state', rooms.get(roomId));
@@ -95,7 +102,8 @@ function handleReady (io, roomId, userId) {
 
     if (allReady) {
       io.to(roomId).emit('start');
-      console.log(`Start a game in room ${roomId}`)
+      console.log(`Start a game in room ${roomId}`);
+      initGameState(io, roomId);
     }
   }
 }
@@ -123,3 +131,122 @@ function handleLeave (io, roomId, userId) {
 
   emitRoomState(io, roomId);
 }
+
+function handleSelectPass (io, roomId, userId, card) {
+  let room = rooms.get(roomId);
+  let passingBuffer = room.gameInfo.passing;
+
+  // If the userId is not in passingBuffer
+  if (!passingBuffer.has(userId)) {
+    room.gameInfo.passing.set(userId, []);
+  }
+
+  let userCards = passingBuffer.get(userId);
+
+  let index = 0;
+  let found = false;
+
+  for (let i = 0; i < userCards.length; i++) {
+    if (userCards[i].suit === card.suit && userCards[i].value === card.value) {
+      found = true;
+      index = i;
+    }
+  }
+
+  // User is deselecting a card from passing buffer
+  if (found) {
+    userCards.splice(index, 1);
+    const socketId = socketIdMap.get(userId);
+    io.to(socketId).emit('cardoff', {
+      card: card,
+    });
+  }
+  // User is selecting a card for the passing buffer
+  else {
+    // 3 cards already present within the passing buffer
+    if (userCards.length >= 3) {
+      return;
+    }
+
+    userCards.push(card);
+    const socketId = socketIdMap.get(userId);
+    io.to(socketId).emit('cardon', {
+      card: card,
+    });
+  }
+}
+
+
+// GAME BUILDERS: 
+
+function initGameState (io, roomId) {
+  let deck = buildDeck();
+  deck = shuffleDeck(deck);
+
+  let room = rooms.get(roomId);
+  room.gameInfo = {
+    phase: 'passing',        // phase: 'passing' or 'playing' or 'done'
+    hands: new Map(),        // userId -> Cards[] (13 cards for each player)
+    passing: new Map(),      // userId -> Cards[] (3 cards each player wants to pass to a different player)
+    trick: {                 
+      cards: [],             // {userId, card} played for this trick round
+      leadSuit: null,        // Lead suite played for this trick round
+    },
+    turn: null,              // userId -> Who plays next (Starting player has 2 of Clubs)
+    heartsBroken: false,     
+    roundScores: new Map(),
+  };
+
+  for (let i = 0; i < 4; i++) {
+    const userId = room.users[i].id;
+    let curHand = [];
+
+    for (let j = 0; j < 13; j++) {
+      curHand.push(deck[(i * 13) + j]);
+      if (deck[(i * 13) + j].suit === 'C' && deck[(i * 13) + j].value === '2') {
+        room.gameInfo.turn = userId;
+      }
+    }
+
+    room.gameInfo.hands.set(userId, curHand);
+  }
+
+
+  // Emit 'deal' to each individual player (info: their hand, who's turn it is, and game phase)
+  for (let i = 0; i < 4; i++) {
+    const userId = room.users[i].id;
+    
+    const socketId = socketIdMap.get(userId);
+    io.to(socketId).emit('deal', {
+      hand: room.gameInfo.hands.get(userId),
+      turn: room.gameInfo.turn, 
+      phase: room.gameInfo.phase,
+    });
+  }
+}
+
+function buildDeck () {
+  const deck = [];
+
+  const suites = ['H', 'D', 'C', 'S'];
+  const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+  for (let i = 0; i < suites.length; i++) {
+    for (let j = 0; j < values.length; j++) {
+      deck[(i * 13) + j] = {'suit': suites[i], 'value': values[j]};
+    }
+  }
+
+  return (deck);
+}
+
+function shuffleDeck (deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = deck[i];
+    deck[i] = deck[j];
+    deck[j] = temp;
+  }
+
+  return (deck);
+} 
