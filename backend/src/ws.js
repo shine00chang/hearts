@@ -74,8 +74,9 @@ function setSocket (socket, io)
     handleLeave(io, roomId, user.id);
   });
 
-  // selectpass event handling
+  // selectpass + pass event handling
   socket.on('selectpass', (card) => handleSelectPass(io, roomId, user.id, card));
+  socket.on('pass', () => handlePass(io, roomId));
 
   // TODO: Add pass event handling (Users lock in their cards for passing)
   // TODO: Add makemove event handling (Users play a card down; Add appropriate game logic)
@@ -179,6 +180,117 @@ function handleSelectPass (io, roomId, userId, card) {
   }
 }
 
+function handlePass (io, roomId) {
+  const room = rooms.get(roomId);
+  const game = room.gameInfo;
+  const users = room.users;
+  const direction = getPassDirection(game.roundNumber);
+
+  // Make sure that all players involved have selected their 3 cards before passing
+  const passingBuffer = game.passing;
+
+  for (let i = 0; i < 4; i++) {
+    const userId = room.users[i].id;
+
+    if (!passingBuffer.has(userId) || passingBuffer.get(userId).length < 3) {
+      return;
+    }
+  }
+
+  if (direction === 'hold') {
+    // No passing this round
+    game.phase = 'playing';
+    for (let i = 0; i < 4; i++) {
+      const userId = room.users[i].id;
+      const socketId = socketIdMap.get(userId);
+      io.to(socketId).emit('passdone', {
+        hand: game.hands.get(userId),
+        phase: game.phase,
+      });
+    }
+
+    return;
+  }
+
+
+  /*
+   * Each player has two card arrays: hands[userId] (stores all the cards they currently have including passing cards) and passing[userId] (stores cards to be passed)
+   * 
+   * 1) First remove all passing.get(userId) cards from the hands.get(userId) array
+   * 2) Perform appropriate exchange operations on passing[userId] map
+   * 3) Push all passing[userId] cards back onto the hands[userId] map
+   */
+  
+
+  // Removing passing cards from hands
+  let hands = room.gameInfo.hands;
+  for (let i = 0; i < 4; i++) {
+    const userId = room.users[i].id;
+    let passing = room.gameInfo.passing.get(userId);
+    let curHand = hands.get(userId);
+    
+
+    for (let j = 0; j < 3; j++) {
+      const index = findIndex(passing[j].suite, passing[j].value, curHand);
+      curHand.splice(index, 1);
+    }
+  }
+
+  // Appropriate operations
+  if (direction == 'left') {
+    let temp = [];
+    copyVals(temp, passingBuffer.get(users[3].id));
+    copyVals(passingBuffer.get(users[3].id), passingBuffer.get(users[2].id));
+    copyVals(passingBuffer.get(users[2].id), passingBuffer.get(users[1].id));
+    copyVals(passingBuffer.get(users[1].id), passingBuffer.get(users[0].id));
+    copyVals(passingBuffer.get(users[0].id), temp);
+  }
+  else if (direction == 'right') {
+    let temp = [];
+    copyVals(temp, passingBuffer.get(users[0].id));
+    copyVals(passingBuffer.get(users[0].id), passingBuffer.get(users[1].id));
+    copyVals(passingBuffer.get(users[1].id), passingBuffer.get(users[2].id));
+    copyVals(passingBuffer.get(users[2].id), passingBuffer.get(users[3].id));
+    copyVals(passingBuffer.get(users[3].id), temp);
+  }
+  else {
+    let temp = [];
+    copyVals(temp, passingBuffer.get(users[0].id));
+    copyVals(passingBuffer.get(users[0].id), passingBuffer.get(users[2].id));
+    copyVals(passingBuffer.get(users[2].id), temp);
+
+    copyVals(temp, passingBuffer.get(users[1].id));
+    copyVals(passingBuffer.get(users[1].id), passingBuffer.get(users[3].id));
+    copyVals(passingBuffer.get(users[3].id), temp);
+  }
+
+  // Push passing[userId] cards to hands[userId] cards
+  for (let i = 0; i < 4; i++) {
+    const userId = room.users[i].id;
+    let passing = room.gameInfo.passing.get(userId);
+    let curHand = hands.get(userId);
+
+    for (let j = 0; j < 3; j++) {
+      curHand.push(passing[j]);
+    }
+  }
+
+  game.phase = 'playing';
+
+  // Emit new hands for each player
+  for (let i = 0; i < 4; i++) {
+    const userId = room.users[i].id;
+    const socketId = socketIdMap.get(userId);
+
+    io.to(socketId).emit('passdone', {
+      hand: game.hands.get(userId),
+      phase: game.phase, 
+    });
+  }
+
+  io.to(roomId).emit('phasechange', { phase: game.phase });
+}
+
 
 // GAME BUILDERS: 
 
@@ -198,6 +310,7 @@ function initGameState (io, roomId) {
     turn: null,              // userId -> Who plays next (Starting player has 2 of Clubs)
     heartsBroken: false,     
     roundScores: new Map(),
+    roundNumber: 1,          // Tells you how to pass cards around
   };
 
   for (let i = 0; i < 4; i++) {
@@ -253,3 +366,30 @@ function shuffleDeck (deck) {
 
   return (deck);
 } 
+
+function getPassDirection (roundNumber) {
+  const r = (roundNumber - 1) % 4;
+  if (r == 0) return 'left';
+  if (r == 1) return 'right';
+  if (r == 2) return 'across';
+  return 'hold';
+}
+
+function findIndex (suite, value, array) {
+  for (let i = 0; i < array.length; i++) {
+    if (array[i].suite === suite && array[i].value === value) {
+      return (i);
+    }
+  }
+
+  return (-1);
+}
+
+// Copy values from arrayTwo into arrayOne
+function copyVals (arrayOne, arrayTwo) {
+  for (let i = 0; i < arrayTwo.length; i++) {
+    const suite = arrayTwo[i].suite;
+    const val = arrayTwo[i].value;
+    arrayOne[i] = {suite: suite, value: val};
+  }
+}
