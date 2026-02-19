@@ -62,21 +62,26 @@ export const createGameUsersTable = async () => {
   `);
 };
 
+export const createSessionTable = async () => {
+  await db.query(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    session_id STRING NOT NULL 
+    user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    time_started TIMESTAMP NOT NULL DEFAULT now()
+  );
+  `);
+}
+
 export const createAllTables = async () => {
   await createUsersTable();
   await createGameTable();
   await createRoundTable();
   await createRoundResultTable();
   await createGameUsersTable();
+  await createSessionTable();
 };
 
-/**
- * Adds a user to the database.
- *
- * @param {string} username The username to be added.
- * @param {string} password_hash The hashed password to be added.
- * @returns {boolean} True on succesful insertion and False on failure. 
- */
+
 export const addUser = async (username, password_hash) => { 
   try {
     await db.query(
@@ -99,8 +104,8 @@ export const addUser = async (username, password_hash) => {
  */
 export const getUser = async (user, type = true) => {
   try {
-    res = await db.query(
-      `SELECT * FROM users WHERE ${type ? "username" : "id"} = $1`,
+    res = await db.query(`
+      SELECT * FROM users WHERE ${type ? "username" : "id"} = $1`,
       [user]
     );
     return res.rows[0] || null
@@ -124,8 +129,8 @@ export const createGame = async () => {
 
 export const addPlayerToGame = async (game_id, user_id, seat) => {
   try {
-    await db.query(
-      `INSERT INTO game_users (game_id, player_id, seat)
+    await db.query(`
+       INSERT INTO game_users (game_id, player_id, seat)
        VALUES ($1, $2, $3)`,
       [game_id, user_id, seat]
     );
@@ -135,8 +140,8 @@ export const addPlayerToGame = async (game_id, user_id, seat) => {
 };
 
 export const createRound = async (game_id, round_number) => {
-  const res = await db.query(
-    `INSERT INTO round (game_id, round_number)
+  const res = await db.query(`
+     INSERT INTO round (game_id, round_number)
      VALUES ($1, $2)
      RETURNING *`,
     [game_id, round_number]
@@ -145,9 +150,30 @@ export const createRound = async (game_id, round_number) => {
 };
 
 export const endRound = async (round_id, user_id, score) => {
-  await db.query(
-    `INSERT INTO round_result (round_id, user_id, score)
+  await db.query(`
+     INSERT INTO round_result (round_id, user_id, score)
      VALUES ($1, $2, $3)`,
     [round_id, user_id, score]
   );
 };
+
+export const getSession = async (session_id) => {
+  try {
+    const res = await db.query(`
+      SELECT * FROM sessions WHERE session_id = $1`,
+      [session_id]
+    ) 
+    return (!(res.rows.length === 0))
+  } catch (err) {
+    console.err(err);
+  }
+}
+
+export const deleteOldSessions = async () => {
+  try {
+    const res = await db.query(`DELETE FROM sessions WHERE time_started < (now() - 'INTERVAL 2 HOUR')`)
+    return res.rows[0];
+  } catch (err) {
+    console.log(err);
+  }
+}
