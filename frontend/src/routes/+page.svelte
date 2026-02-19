@@ -1,4 +1,8 @@
 <script lang="ts">
+	import type { PageProps } from './$types';
+
+	let { user }: PageProps = $props();
+
   let roomJoinModal;
   let roomCreateModal;
   let roomCodeInput = '';

@@ -1,8 +1,22 @@
 import { Server } from 'socket.io';
 import { wsauth } from './auth.js';
 
-// Mock room storage (Change to appropriate db queries later)
 const rooms = new Map();
+// Testing room:
+rooms.set("TEST", {
+    id: "TEST",
+    users: [
+        { id: 'alice', username: 'Alice' },
+        { id: 'bessie', username: 'Bessie' },
+        { id: 'cow', username: 'Cow' }
+    ],
+    readyState: {
+        alice: true,
+        bessie: true,
+        cow: true,
+    }
+});
+
 const socketIdMap = new Map();
 
 export default function setWS (server) {
@@ -51,7 +65,7 @@ function setSocket (socket, io)
     rooms.set(roomId, {
       id: roomId,
       users: [],
-      readyState: new Map()
+      readyState: {}
     });
   }
 
@@ -59,8 +73,8 @@ function setSocket (socket, io)
   
   // Add user
   room.users.push(user);
-  room.readyState.set(user.id, false); // All players start as 'not ready' after joining room
-  socketIdMap.set(user.id, socket.id); // Map a new user to their socket id
+  room.readyState[user.id] = false; // All players start as 'not ready' after joining room
+  socketIdMap.set[user.id] = socket.id; // Map a new user to their socket id
 
   // Broadcast state whenever a new player joins
   emitRoomState(io, roomId);
@@ -74,47 +88,42 @@ function setSocket (socket, io)
     handleLeave(io, roomId, user.id);
   });
 
-  // selectpass + pass event handling
-  socket.on('selectpass', (card) => handleSelectPass(io, roomId, user.id, card));
-  socket.on('pass', () => handlePass(io, roomId));
-
-  // TODO: Add play event handling (Users play a card down; Add appropriate game logic)
+  // game event handling
+  socket.on('pass', (cards) => handlePass(io, roomId, user.id, cards));
+  socket.on('play', (card) => handleSelectPass(io, roomId, user.id, card));
 }
 
 // EVENT HANDLERS: 
-
 function emitRoomState (io, roomId) {
   io.to(roomId).emit('state', rooms.get(roomId));
 }
 
 function handleReady (io, roomId, userId) {
-  const curRoom = rooms.get(roomId);
-  curRoom.readyState.set(userId, true);
+  console.log('received ready');
+
+  const room = rooms.get(roomId);
+  room.readyState[userId] = true;
   emitRoomState(io, roomId); // Frontend will display some "player_username ready" message
 
   // If all 4 players are ready, start the game
-  if (curRoom.users.length === 4) {
-    let allReady = true;
+  if (
+    room.users.length === 4 && 
+    room.users
+      .map(user => user.id)
+      .map(id => room.readyState[id])
+      .reduce((all, ready) => all && ready, true)) {
 
-    for (const isReady of curRoom.readyState.values()) {
-      if (!isReady) {
-        allReady = false;
-        break;
-      }
-    }
-
-    if (allReady) {
-      io.to(roomId).emit('start');
-      console.log(`Start a game in room ${roomId}`);
-      initGameState(io, roomId);
-    }
+    console.log(`Start a game in room ${roomId}`);
+    initGameState(io, roomId);
+    emitRoomState(io, roomId);
   }
 }
 
 function handleUnready (io, roomId, userId) {
-  const curRoom = rooms.get(roomId);
-  curRoom.readyState.set(userId, false);
-  emitRoomState(io, roomId); // Display some "player_username not ready" message
+  const room = rooms.get(roomId);
+  room.readyState[userId] = false;
+
+  emitRoomState(io, roomId);
 }
 
 function handleLeave (io, roomId, userId) {
@@ -123,7 +132,7 @@ function handleLeave (io, roomId, userId) {
 
   // remove user from room
   room.users = rooms.get(roomId).users.filter(u => u.id !== userId);
-  room.readyState.delete(userId);
+  delete room.readyState[userId];
 
   // if room is empty, delete it
   if (room.users.length === 0) {
@@ -135,53 +144,10 @@ function handleLeave (io, roomId, userId) {
   emitRoomState(io, roomId);
 }
 
-function handleSelectPass (io, roomId, userId, card) {
-  let room = rooms.get(roomId);
-  let passingBuffer = room.gameInfo.passing;
-
-  // If the userId is not in passingBuffer
-  if (!passingBuffer.has(userId)) {
-    room.gameInfo.passing.set(userId, []);
-  }
-
-  let userCards = passingBuffer.get(userId);
-
-  let index = 0;
-  let found = false;
-
-  for (let i = 0; i < userCards.length; i++) {
-    if (userCards[i].suit === card.suit && userCards[i].value === card.value) {
-      found = true;
-      index = i;
-    }
-  }
-
-  // User is deselecting a card from passing buffer
-  if (found) {
-    userCards.splice(index, 1);
-    const socketId = socketIdMap.get(userId);
-    io.to(socketId).emit('cardoff', {
-      card: card,
-    });
-  }
-  // User is selecting a card for the passing buffer
-  else {
-    // 3 cards already present within the passing buffer
-    if (userCards.length >= 3) {
-      return;
-    }
-
-    userCards.push(card);
-    const socketId = socketIdMap.get(userId);
-    io.to(socketId).emit('cardon', {
-      card: card,
-    });
-  }
-}
-
-function handlePass (io, roomId) {
+function handlePass (io, roomId, cards) {
+  // TODO:
   const room = rooms.get(roomId);
-  const game = room.gameInfo;
+  const game = room.gameState;
   const users = room.users;
   const direction = getPassDirection(game.roundNumber);
 
@@ -222,10 +188,10 @@ function handlePass (io, roomId) {
   
 
   // Removing passing cards from hands
-  let hands = room.gameInfo.hands;
+  let hands = room.gameState.hands;
   for (let i = 0; i < 4; i++) {
     const userId = room.users[i].id;
-    let passing = room.gameInfo.passing.get(userId);
+    let passing = room.gameState.passing.get(userId);
     let curHand = hands.get(userId);
     
 
@@ -266,7 +232,7 @@ function handlePass (io, roomId) {
   // Push passing[userId] cards to hands[userId] cards
   for (let i = 0; i < 4; i++) {
     const userId = room.users[i].id;
-    let passing = room.gameInfo.passing.get(userId);
+    let passing = room.gameState.passing.get(userId);
     let curHand = hands.get(userId);
 
     for (let j = 0; j < 3; j++) {
@@ -293,50 +259,39 @@ function handlePass (io, roomId) {
 
 // GAME BUILDERS: 
 
+// Creates the game state object
 function initGameState (io, roomId) {
-  let deck = buildDeck();
-  deck = shuffleDeck(deck);
+  let deck = shuffleDeck(buildDeck());
 
   let room = rooms.get(roomId);
-  room.gameInfo = {
-    phase: 'passing',        // phase: 'passing' or 'playing' or 'done'
-    hands: new Map(),        // userId -> Cards[] (13 cards for each player)
-    passing: new Map(),      // userId -> Cards[] (3 cards each player wants to pass to a different player)
-    trick: {                 
-      cards: [],             // {userId, card} played for this trick round
-      leadSuit: null,        // Lead suite played for this trick round
-    },
-    turn: null,              // userId -> Who plays next (Starting player has 2 of Clubs)
+  room.gameState = {
+    hands: {},        // userId -> Cards[] (13 cards for each player)
+
+    passing: true,
+    passes: {},      // userId -> Cards[] (3 cards each player wants to pass to a different player)
+    passDirection: getPassDirection(1),
+    trick: {},            // {userId, card} played for this trick round
+    leader: undefined,        // Lead suite played for this trick round
+    turn: undefined,              // userId -> Who plays next (Starting player has 2 of Clubs)
     heartsBroken: false,     
-    roundScores: new Map(),
-    roundNumber: 1,          // Tells you how to pass cards around
+    roundScores: {},
+    roundNumber: 1,
   };
 
-  for (let i = 0; i < 4; i++) {
-    const userId = room.users[i].id;
-    let curHand = [];
+  // for each user
+  for (const [ i, user ] of room.users.entries()) {
+  
+    // create hand
+    let hand = [];
 
     for (let j = 0; j < 13; j++) {
-      curHand.push(deck[(i * 13) + j]);
+      hand.push(deck[(i * 13) + j]);
       if (deck[(i * 13) + j].suit === 'C' && deck[(i * 13) + j].value === '2') {
-        room.gameInfo.turn = userId;
+        room.gameState.turn = user.id;
       }
     }
-
-    room.gameInfo.hands.set(userId, curHand);
-  }
-
-
-  // Emit 'deal' to each individual player (info: their hand, who's turn it is, and game phase)
-  for (let i = 0; i < 4; i++) {
-    const userId = room.users[i].id;
-    
-    const socketId = socketIdMap.get(userId);
-    io.to(socketId).emit('deal', {
-      hand: room.gameInfo.hands.get(userId),
-      turn: room.gameInfo.turn, 
-      phase: room.gameInfo.phase,
-    });
+    room.gameState.hands[user.id] = hand;
+    room.gameState.roundScores[user.id] = 0;
   }
 }
 

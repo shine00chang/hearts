@@ -63,19 +63,31 @@ Server -> Client commands:
 - 'disconnect': server closes connection
 
 **Game**
+Game state: 
+- hands: id: [13] \(don't send others'!)
+- passes: id: [4] \(don't send others'!)
+- points: id: int
+- leader: id (player that leads the trick)
+- turn: id (player that needs to play next)
+- plays: id: card (which card has been played for this trick)
+- brokenHearts: bool
+- passDirection: string
+- passing: bool (true when we are passing, false when it is done)
+
+Notes on card encoding:
+- suit: 'S' or 'C' or 'D' or 'H'
+- value: '2' to 'A'
 
 Client -> Server commands:
-- 'selectpass': Player toggles a card to pass to another player (should be a single card object) '{ suit: 'S' or 'C' or 'D' or 'H', value: '2' to 'A' }'
-- 'pass': Player ready to send 3 selected cards to another player (All 4 players must have clicked pass for swapping to occur)
-- 'play': Player plays a card for the round's current cycle (should be a single card object like 'selectpass')
+- 'pass': Player tells the server which 3 selected cards to send to another player. Server stores in 'passes'
+- 'play': Player tells the server which card they will play for the trick. 
 
-Server -> Client
-- 'deal': Server sends 13 cards to each player (privately)
-- 'cardon': Player (legally) selects a card they want to send to another player
-- 'cardoff': Player (legally) deselects a card they want to send to another player 
-- 'passdone': Server updated the hand of each individual player after shift '{ hand: Card array }'
-- 'phasechange': Server updates the game phase '{ phase: 'passing' or 'playing' or 'done' }'
-- 'illegalmove': Server emits to a player (privately) that their move was illegal
+Server -> Client commands:
+- 'state': Sends the state object
+    - server sends this when:
+        - all players have sent 'pass'
+        - player with turn sent 'play'
+- 'illegalmove': Server emits to a player that their move was illegal. sent as a response to 'play'.
 
 # Database
 **user**

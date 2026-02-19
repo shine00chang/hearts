@@ -1,25 +1,31 @@
 <script>
+  import { WSPORT } from '$lib/configs.ts';
   import { onMount } from 'svelte';
 
   import NotReady from '$lib/svgs/NotReady.svelte';
   import Ready from '$lib/svgs/Ready.svelte';
   import Profile from '$lib/svgs/Profile.svelte';
-
-  const WSPORT = 3000;
+  import Game from '$lib/game.svelte';
 
   let socket;
 
+  const { data } = $props();
+  const { user: me } = data;
+
   // display relevant states
   let gameStart = false;
-  let roomState;
+  let roomState = $state();
 
   // display elements
   let noJoinModal;
 
   let renderGameState; // bound function from game element
   let emitMove; // sent to game element 
+  let selfId;
 
   onMount(() => {
+    console.log('i am: ', me);
+
     const queryParams = new URLSearchParams(window.location.search);
     let code=undefined;
     if (queryParams.has('code')) {
@@ -47,7 +53,6 @@
 
     socket.on('nojoin', _=>noJoinModal.showModal())
     socket.on('state', renderState);
-    socket.on('start', _=>gameStart=true)
 
     emitMove = (move) => {
       // socket emit move
@@ -60,8 +65,17 @@
 
     roomState = state;
 
-    if (gameStart)
+    if (roomState.gameState !== undefined) {
+      gameStart = true;
       renderGameState(state.gameState);
+    }
+  }
+
+  const toggleReady = _ => {
+    if (roomState.readyState[self.id] === true)
+      socket.emit('unready');
+    else
+      socket.emit('ready');
   }
 
 </script>
@@ -98,7 +112,7 @@
           <div class="text-xs uppercase font-semibold opacity-60">probably good at the game</div>
         </div>
         <!-- ready state -->
-        <div class='w-8 h-8'>
+        <div class='w-8 h-8' on:click={user.id === me.id ? toggleReady : _ => console.log(user.id)}>
           {#if roomState.readyState[user.id]}
             <Ready/>
           {:else}
@@ -109,10 +123,10 @@
     {/each}
   </ul>
 </div>
-
+{:else if !gameStart}
+  <p>Waiting on room state..</p>
 {/if}
 
-{#if gameStart}
+<!-- does not show until the first invocation of render. cannot be wrapped in 'if' because the function needs to be bound first. 
+chicken an egg senario. -->
 <Game bind:render={renderGameState} emitMove={emitMove}/>
-{/if}
-
