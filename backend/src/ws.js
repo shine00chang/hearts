@@ -43,6 +43,7 @@ function setSocket (socket, io)
       const v = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       let out = "";
       do {
+        out="";
         for (let i=0; i<4; i++) out += v.charAt(Math.floor(Math.random()*v.length));
       } while (rooms.has(out));
       return out;
