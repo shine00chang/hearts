@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Navbar from '$lib/Navbar.svelte';
 
 	let { user }: PageProps = $props();
 
@@ -8,6 +9,7 @@
 	let roomCodeInput = '';
 </script>
 
+<Navbar />
 <main class="px-48 pt-12">
 	<!-- room join dialog -->
 	<dialog bind:this={roomJoinModal} class="modal">

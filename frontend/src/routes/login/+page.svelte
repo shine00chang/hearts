@@ -1,6 +1,7 @@
 <script>
 	import { goto } from "$app/navigation";
 	import { userState } from "../../state.svelte";
+    import Navbar from "$lib/Navbar.svelte";
 
     let username = $state('');
     let password = $state('');
@@ -32,6 +33,7 @@
 	};
 </script>
 
+<Navbar />
 <div class="w-full flex items-center flex-col py-8 px-8 gap-4">
 	<h1 class="text-2xl font-bold">Login</h1>
 
