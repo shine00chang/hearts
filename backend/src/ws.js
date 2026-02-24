@@ -91,7 +91,7 @@ function setSocket (socket, io)
 
   // game event handling
   socket.on('pass', (cards) => handlePass(io, roomId, user.id, cards));
-  socket.on('play', (card) => handleSelectPass(io, roomId, user.id, card));
+  socket.on('play', (card) => handlePlay(io, roomId, user.id, card));
 }
 
 // EVENT HANDLERS: 
@@ -145,40 +145,50 @@ function handleLeave (io, roomId, userId) {
   emitRoomState(io, roomId);
 }
 
-function handlePass (io, roomId, cards) {
-  // TODO:
+function handlePass (io, roomId, userId, cards) 
+{
+  const room = rooms.get(roomId);
+  const game = room.gameState; 
+
+  game.passes[userId] = cards;
+
+  /*
+  // if all players involved have selected their 3 cards, pass
+  for (const user of room.users)
+    if (!game.passes[user.id] || game.passes[user.id].length < 3)
+      return;
+  */
+
+  pass(io, roomId);
+}
+
+// Swaps cards and emits state
+function pass(io, roomId)
+{
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
   const direction = getPassDirection(game.roundNumber);
 
+  /*
   // Make sure that all players involved have selected their 3 cards before passing
-  const passingBuffer = game.passing;
-
-  for (let i = 0; i < 4; i++) {
-    const userId = room.users[i].id;
-
-    if (!passingBuffer.has(userId) || passingBuffer.get(userId).length < 3) {
+  for (const user of room.users)
+    if (!passes[user.id] || passes[user.id].length < 3)
       return;
-    }
-  }
+  */
 
-  if (direction === 'hold') {
-    // No passing this round
-    game.phase = 'playing';
-    for (let i = 0; i < 4; i++) {
-      const userId = room.users[i].id;
-      const socketId = socketIdMap.get(userId);
-      io.to(socketId).emit('passdone', {
-        hand: game.hands.get(userId),
-        phase: game.phase,
-      });
-    }
+  game.hands['xyz'] = game.hands['xyz'].filter(card => !game.passes['xyz'].includes(card));
+  game.hands['xyz'].push("D13", "D12", "S13");
+  game.passing = false;
+  game.passes = {};
 
-    return;
-  }
+  game.turn = 'xyz';
+  game.leader = 'bessie';
+  game.plays = { bessie: "D1" };
 
-
+  emitRoomState(io, roomId);
+  // NOTE: not going to lie i'm ignoring all this
+  return;
   /*
    * Each player has two card arrays: hands[userId] (stores all the cards they currently have including passing cards) and passing[userId] (stores cards to be passed)
    * 
@@ -257,6 +267,19 @@ function handlePass (io, roomId, cards) {
   io.to(roomId).emit('phasechange', { phase: game.phase });
 }
 
+function handlePlay (io, roomId, userId, card) 
+{
+  // TODO: check if card in hand
+
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+  const users = room.users;
+
+  console.log('someone played: ', userId, card);
+  game.hands[userId] = game.hands[userId].filter(i => i != card);
+
+  emitRoomState(io, roomId);
+}
 
 // GAME BUILDERS: 
 
@@ -294,6 +317,10 @@ function initGameState (io, roomId) {
     room.gameState.hands[user.id] = hand;
     room.gameState.roundScores[user.id] = 0;
   }
+
+  room.gameState.hands['xyz'] = [
+    'H4', 'D1', 'D10', 'S7', 'C10', 'H1', 'D8', 'H2', 'S9'
+  ];
 }
 
 function buildDeck () {

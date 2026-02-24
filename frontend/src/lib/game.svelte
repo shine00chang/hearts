@@ -6,20 +6,21 @@
 
   let { roomState, emit, me } = $props();
   let passbuffer = $state([]);
+  let playbuffer = $state();
   let actions = $state([]);
   let cards = $derived.by(_ => {
     const gameState = roomState.gameState;
 
-    // const hand = gameState.hand[me];
-    const hand = [
-      'H4', 'D1', 'D10', 'S7', 'C10', 'H1', 'D8', 'H2', 'S9'
-    ];
+    console.log(gameState);
+
+    const hand = gameState.hands[me];
 
     const gap = (hand_width - CARD.WIDTH) / (hand.length-1);
     const cards = hand.map((card, i) => {
+      const holding = passbuffer.indexOf(card) !== -1 || playbuffer === card;
       return {
         x: gap * i,
-        y: passbuffer.indexOf(card) === -1 ? 0 : -50,
+        y: holding ? -50 : 0,
         value: card,
       };
     });
@@ -54,14 +55,25 @@
       return;
     }
 
-    emit('play', card)
+    // if in playing phase, store in play buffer
+    if (!playbuffer) actions.push(actionPlay);
+    playbuffer = card.value;
   }
 
   const actionPass = {
     text: "pass",
     handler: _ => {
       emit('pass', passbuffer)
+      passbuffer = [];
       actions = actions.filter(action => action.text != actionPass.text);
+    }
+  }
+  const actionPlay = {
+    text: "play",
+    handler: _ => {
+      emit('play', playbuffer);
+      playbuffer = undefined;
+      actions = actions.filter(action => action.text != actionPlay.text);
     }
   }
 </script>
