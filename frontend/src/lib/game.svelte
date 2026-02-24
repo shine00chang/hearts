@@ -1,5 +1,9 @@
 <script>
   import Card from '$lib/card.svelte';
+  import CardOpponentLR from '$lib/cardOppLR.svelte';
+  import CardOpponentH from '$lib/cardOppH.svelte';
+  import Player from '$lib/player.svelte';
+  import Me from '$lib/me.svelte';
   import { CARD } from '$lib/configs.ts';
 
   let hand_width = $state();
@@ -28,6 +32,11 @@
 
     return cards;
   });
+  // TODO: need to dynamically generate this too. gotta make something for turn order
+  let userLeft = roomState.users.find(o => o.id === 'bessie');
+  let userRight = roomState.users.find(o => o.id === 'alice');
+  let userUp = roomState.users.find(o => o.id === 'xyz');
+  let userMe = roomState.users.find(o => o.id === me);
 
   const cardclick = card => {
     const game = roomState.gameState;
@@ -46,7 +55,7 @@
         card.y = -50;
       }
 
-      // if buffer has 3, add pass action 
+      // if buffer has 3, add p/meass action 
       if (passbuffer.length === 3)
         actions.push(actionPass)
       else
@@ -57,7 +66,13 @@
 
     // if in playing phase, store in play buffer
     if (!playbuffer) actions.push(actionPlay);
-    playbuffer = card.value;
+    if (card.value == playbuffer) {
+      actions = actions.filter(action => action.text != actionPlay.text);
+      playbuffer = undefined;
+    } else {
+      playbuffer = card.value;
+    }
+
   }
 
   const actionPass = {
@@ -81,7 +96,6 @@
 <style>
   .handbox-pos {
     position: absolute;
-    anchor-name: --hand-box;
     top: 70%;
     left: 50%;
     width: 50%;
@@ -113,5 +127,17 @@
       <Card onclick={_ => cardclick(card)} {...card}/>
     {/each}
   </div>
+  <Me top={80} left={85} name={userMe.username} points={38}/>
 
+  <!-- left box -->
+  <CardOpponentLR top={40} left={10} num={roomState.gameState.hands[userLeft.id].length}/>
+  <Player top={75} left={10} name={userLeft.username}/>
+
+  <!-- right box -->
+  <CardOpponentLR top={40} left={90} num={roomState.gameState.hands[userRight.id].length}/>
+  <Player top={12} left={90} name={userRight.username}/>
+
+  <!-- up box -->
+  <CardOpponentH top={10} left={50} num={roomState.gameState.hands[userUp.id].length}/>
+  <Player top={10} left={15} name={userUp.username}/>
 </div>
