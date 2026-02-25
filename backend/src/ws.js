@@ -269,16 +269,77 @@ function pass(io, roomId)
 
 function handlePlay (io, roomId, userId, card) 
 {
+  // TODO: check if turn
   // TODO: check if card in hand
 
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
 
+
+  // change hands
   console.log('someone played: ', userId, card);
   game.hands[userId] = game.hands[userId].filter(i => i != card);
+  
+  // set trick 
+  game.trick[userId] = card;
+
+  // check trick end
+  if (games.trick.keys().length == 4) {
+    trickend(io, roomId);
+  }
+
+  // check round end
+  // calculates if all hands empty
+  if (games.hands.entries().reduce(([k, v], a) => a + v.length, 0) == 0) {
+    roundend(io, roomId);
+  }
+
+  // NOTE: game end check happens in the round end timeout, since we want to show
+  // the round end screen before we get to the game end screen
 
   emitRoomState(io, roomId);
+}
+
+function trickend(io, roomId) 
+{
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+  const users = room.users;
+
+  // TODO: find & set leader & turn
+  
+
+  // TODO: update roundPoints
+  
+
+  // TODO: clear trick
+}
+
+function roundend(io, roomId)
+{
+  // TODO: add round point to points
+  
+  // NOTE: For frontend, let's update the state after some timeout. This way, the frontend will see a 'round end'
+  // state for a moment, which it then shows the round end screen for a while (say, 5s), after which it will see the
+  // state has been updated to a new round, and it will exit out of that screen
+
+  setTimeout(_ => {
+    // NOTE: so here is where we'd update the state
+
+    // TODO: rebuild hands
+    
+    // check game end
+    // NOTE: 20 point limit for testing
+    if (game.points.values().some(x => x > 20)) {
+      gameend(io, roomId);
+    }
+  }, 5000);
+}
+
+function gameend(io, roomId)
+{
+  // TODO: need to send to DB
 }
 
 // GAME BUILDERS: 
@@ -298,7 +359,8 @@ function initGameState (io, roomId) {
     leader: undefined,        // Lead suite played for this trick round
     turn: undefined,              // userId -> Who plays next (Starting player has 2 of Clubs)
     heartsBroken: false,     
-    roundScores: {},
+    roundPoints: {},
+    points: {},
     roundNumber: 1,
   };
 
