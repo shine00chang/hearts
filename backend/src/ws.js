@@ -94,7 +94,7 @@ function setSocket (socket, io)
   socket.on('play', (card) => handlePlay(io, roomId, user.id, card));
   socket.on('passdirection', () => handleDirection(io, roomId));
   socket.on('brokenHearts', () => handleBrokenHearts(io, roomId));
-
+  socket.on('passing', () => handlePassingBool(io, roomId));
 
 }
 
@@ -177,6 +177,11 @@ function handleDirection (io, roomId) {
 function handleBrokenHearts (io, roomId) {
   const room = rooms.get(roomId);
   io.to(roomId).emit(room.gameState.heartsBroken);
+}
+
+function handlePassingBool (io, roomId) {
+  const room = rooms.get(roomId);
+  io.to(roomId).emit(room.gameState.passing);
 }
 
 // Swaps cards and emits state
