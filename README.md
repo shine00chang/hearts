@@ -65,14 +65,16 @@ Server -> Client commands:
 **Game**
 Game state: 
 - hands: id: [13] \(don't send others'!)
-- passes: id: [4] \(don't send others'!)
-- points: id: int
+- passing: bool (true when we are passing, false when it is done)
+- passes: id: [3] \(don't send others'!)
+- passDirection: string
+- trick: id: card (which card has been played for this trick)
 - leader: id (player that leads the trick)
 - turn: id (player that needs to play next)
-- plays: id: card (which card has been played for this trick)
-- brokenHearts: bool
-- passDirection: string
-- passing: bool (true when we are passing, false when it is done)
+- heartsBroken: bool
+- roundPoints: id: int (temporary accumulator that tracks points for the current round)
+- points: id: int (persistent running total across all rounds; committed to db at gameend)
+- roundNumber: room's round number
 
 Notes on card encoding:
 - suit: 'S' or 'C' or 'D' or 'H'
