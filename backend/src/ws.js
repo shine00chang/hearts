@@ -344,10 +344,9 @@ function roundend(io, roomId)
   const room = rooms.get(roomId);
   const game = room.gameState;
 
-  // TODO: Do we want to implement the shoot the moon rule??
-  for (const user of room.users) {
-    game.points[user.id] += game.roundPoints[user.id];
-  }
+  const threshold = 20;
+
+  resolveShootTheMoon(game, room.users, threshold);
 
   emitRoomState(io, roomId);
 
@@ -362,6 +361,7 @@ function roundend(io, roomId)
     // NOTE: 20 point limit for testing
     if (game.points.values().some(x => x > 20)) {
       gameend(io, roomId);
+      return;
     }
 
     // Rebuild for next round
@@ -384,7 +384,7 @@ function roundend(io, roomId)
     }
 
     game.passDirection = getPassDirection(game.roundNumber);
-    game.passing = (newDirection !== 'hold');
+    game.passing = (game.passDirection !== 'hold');
     game.passes = {};
     game.trick = {};
     game.heartsBroken = false;
@@ -493,5 +493,52 @@ function copyVals (arrayOne, arrayTwo) {
     const suite = arrayTwo[i].suite;
     const val = arrayTwo[i].value;
     arrayOne[i] = {suite: suite, value: val};
+  }
+}
+
+function resolveShootTheMoon (game, users, threshold) {
+  const shooter = users.find(u => game.roundPoints[u.id] === 26);
+
+  if (!shooter) {
+    // No player earned all 26 points (no shoot/normal scoring)
+
+    for (const user of users) {
+      game.points[user.id] += game.roundPoints[user.id];
+    }
+    return;
+  }
+
+  /*
+   * Optimal implementation of shooting the moon scoring for the player
+   * No frontend communication needed
+   * 
+   * Player has two choices in shooting the moon: 
+   * 1) Add 26 points to all other scores
+   * 2) Subtract 26 points from their own score
+   * 
+   * Player should only add 26 points to all other scores if either the 
+   * game does not end or the game does end but with the shooter winning
+   */ 
+
+  // Simulate adding 26 to all non-shooter players
+  const simulated = {};
+
+  for (const user of users) {
+    simulated[user.id] = game.points[user.id] + (user.id !== shooter.id ? 26 : 0);
+  }
+
+  const gameEndsIfAdd = users.some(u => simulated[u.id] >= threshold);
+  const shooterWinsIfAdd = !users.some(u => simulated[u.id] < simulated[shooter.id]);
+
+  if (!gameEndsIfAdd || shooterWinsIfAdd) {
+    // Safe to add 26 points to all non-shooter players
+    for (const user of users) {
+      if (user.id !== shooter.id) {
+        game.points[user.id] += 26;
+      }
+    }
+  }
+  else {
+    game.points[shooter.id] -= 26;
   }
 }
