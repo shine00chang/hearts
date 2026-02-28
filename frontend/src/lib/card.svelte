@@ -1,6 +1,6 @@
 <script>
   import { CARD } from '$lib/configs.ts';
-  let { onclick, value, x, y } = $props();
+  let { value, height } = $props();
 </script>
 
 <style>
@@ -10,8 +10,7 @@
   }
 </style>
 
-<div on:click={onclick} class='cardbox border-2 border-gray-200 rounded-xl bg-white'
-     style='left: {x}px; top: {y}px; height: {CARD.HEIGHT}px; width: {CARD.WIDTH}px'>
+<div class='border-2 border-gray-200 rounded-xl bg-white' style='height:{height}px; width:{height * 5/7}px;'>
   <div class='my-auto'>
     {value}
   </div>

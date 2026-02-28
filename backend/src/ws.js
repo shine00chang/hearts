@@ -92,10 +92,6 @@ function setSocket (socket, io)
   // game event handling
   socket.on('pass', (cards) => handlePass(io, roomId, user.id, cards));
   socket.on('play', (card) => handlePlay(io, roomId, user.id, card));
-  socket.on('passdirection', () => handleDirection(io, roomId));
-  socket.on('brokenHearts', () => handleBrokenHearts(io, roomId));
-  socket.on('passing', () => handlePassingBool(io, roomId));
-
 }
 
 // EVENT HANDLERS: 
@@ -166,24 +162,6 @@ function handlePass (io, roomId, userId, cards)
   pass(io, roomId);
 }
 
-function handleDirection (io, roomId) {
-  const room = rooms.get(roomId);
-  const game = room.gameState;
-
-  const direction = getPassDirection(game.roundNumber);
-  io.to(roomId).emit('passDirection', direction);
-}
-
-function handleBrokenHearts (io, roomId) {
-  const room = rooms.get(roomId);
-  io.to(roomId).emit(room.gameState.heartsBroken);
-}
-
-function handlePassingBool (io, roomId) {
-  const room = rooms.get(roomId);
-  io.to(roomId).emit(room.gameState.passing);
-}
-
 // Swaps cards and emits state
 function pass(io, roomId)
 {
@@ -206,7 +184,7 @@ function pass(io, roomId)
 
   game.turn = 'xyz';
   game.leader = 'bessie';
-  game.plays = { bessie: "D1" };
+  game.trick = { bessie: "D1" };
 
   emitRoomState(io, roomId);
   // NOTE: not going to lie i'm ignoring all this
@@ -306,14 +284,18 @@ function handlePlay (io, roomId, userId, card)
   // set trick 
   game.trick[userId] = card;
 
+  // NOTE: fake turns
+  game.trick['alice'] = 'S3';
+  game.turn = 'bessie';
+
   // check trick end
-  if (games.trick.keys().length == 4) {
+  if (Object.keys(game.trick).length == 4) {
     trickend(io, roomId);
   }
 
   // check round end
   // calculates if all hands empty
-  if (games.hands.entries().reduce(([k, v], a) => a + v.length, 0) == 0) {
+  if (Object.entries(game.hands).reduce((a, [k, v]) => a + v.length, 0) == 0) {
     roundend(io, roomId);
   }
 
@@ -480,12 +462,9 @@ function initGameState (io, roomId) {
       }
     }
     room.gameState.hands[user.id] = hand;
-    room.gameState.roundScores[user.id] = 0;
+    room.gameState.points[user.id] = 0;
+    room.gameState.roundPoints[user.id] = 0;
   }
-
-  room.gameState.hands['xyz'] = [
-    'H4', 'D1', 'D10', 'S7', 'C10', 'H1', 'D8', 'H2', 'S9'
-  ];
 }
 
 function buildDeck () {

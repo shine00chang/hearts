@@ -4,17 +4,18 @@
   import CardOpponentH from '$lib/cardOppH.svelte';
   import Player from '$lib/player.svelte';
   import Me from '$lib/me.svelte';
+  import Center from '$lib/center.svelte';
+  import Trick from '$lib/trick.svelte';
+
   import { CARD } from '$lib/configs.ts';
 
   let hand_width = $state();
 
   let { roomState, emit, me } = $props();
-  let passbuffer = $state([]);
-  let playbuffer = $state();
-  let actions = $state([]);
-  let cards = $derived.by(_ => {
-    const gameState = roomState.gameState;
+  let gameState = $derived(roomState.gameState);
 
+  // derived states
+  let cards = $derived.by(_ => {
     console.log(gameState);
 
     const hand = gameState.hands[me];
@@ -32,17 +33,28 @@
 
     return cards;
   });
+
+  // states
+  let passbuffer = $state([]);
+  let playbuffer = $state();
+  let actions = $state([]);
+
   // TODO: need to dynamically generate this too. gotta make something for turn order
   let userLeft = roomState.users.find(o => o.id === 'bessie');
   let userRight = roomState.users.find(o => o.id === 'alice');
   let userUp = roomState.users.find(o => o.id === 'xyz');
   let userMe = roomState.users.find(o => o.id === me);
 
-  const cardclick = card => {
-    const game = roomState.gameState;
+  const directionToNumber = d => {
+    if (userUp.id == d) return 0;
+    if (userRight.id == d) return 1;
+    if (userMe.id == d) return 2;
+    if (userLeft.id == d) return 3;
+  }
 
+  const cardclick = card => {
     // if in passing phase, toggle the pass buffer
-    if (game.passing) {
+    if (gameState.passing) {
 
       if (passbuffer.indexOf(card.value) !== -1) {
         // if in buffer already
@@ -65,6 +77,15 @@
     }
 
     // if in playing phase, store in play buffer
+    // check if its your turn
+    if (gameState.turn !== me)
+      return;
+
+    // check if suite is right
+    const lead = gameState.trick[gameState.leader].charAt(0);
+    if (gameState.hands[me].some(card => card.charAt(0) == lead) && card.value.charAt(0) != lead)
+      return;
+
     if (!playbuffer) actions.push(actionPlay);
     if (card.value == playbuffer) {
       actions = actions.filter(action => action.text != actionPlay.text);
@@ -72,7 +93,6 @@
     } else {
       playbuffer = card.value;
     }
-
   }
 
   const actionPass = {
@@ -107,10 +127,27 @@
     left: 75%;
     transform: translate(-100%, 0%);
   }
+  .cardbox {
+    position: fixed;
+    position-anchor: --hand-box;
+  }
 </style>
 
 <div class='h-screen w-screen bg-slate-100'>
   <h1> big games </h1>
+
+  <!-- center box -->
+  <Center top={50} left={50} 
+          passing={gameState.passing} 
+          broken={gameState.heartsBroken} 
+          turn={directionToNumber(gameState.turn)}
+          pass={directionToNumber(gameState.passDirection)}/>
+
+  <!-- trick box -->
+  <Trick left={gameState.trick[userLeft.id]}
+         right={gameState.trick[userRight.id]}
+         up={gameState.trick[userUp.id]}
+         down={gameState.trick[me]}/>
 
   <!-- action button box-->
   <div class='buttonbox-pos p-4 w-48 h-24 flex flex-row-reverse'>
@@ -123,21 +160,28 @@
 
   <!-- player box -->
   <div class='handbox-pos h-{CARD.HEIGHT}px' bind:clientWidth={hand_width}>
+
+
     {#each cards as card}
-      <Card onclick={_ => cardclick(card)} {...card}/>
+      <div on:click={_ => cardclick(card)} class='cardbox' style='left: {card.x}px; top: {card.y}px;'>
+        <Card value={card.value} height={CARD.HEIGHT}/>
+      </div>
     {/each}
   </div>
-  <Me top={80} left={85} name={userMe.username} points={38}/>
+  <Me top={80} left={90} name={userMe.username} points={gameState.points[me]} round={gameState.roundPoints[me]}/>
 
   <!-- left box -->
-  <CardOpponentLR top={40} left={10} num={roomState.gameState.hands[userLeft.id].length}/>
-  <Player top={75} left={10} name={userLeft.username}/>
+  <CardOpponentLR top={40} left={10} num={gameState.hands[userLeft.id].length}/>
+  <Player top={75} left={10} name={userLeft.username}
+    points={gameState.points[userLeft.id]} round={gameState.roundPoints[userLeft.id]}/>
 
   <!-- right box -->
-  <CardOpponentLR top={40} left={90} num={roomState.gameState.hands[userRight.id].length}/>
-  <Player top={12} left={90} name={userRight.username}/>
+  <CardOpponentLR top={40} left={90} num={gameState.hands[userRight.id].length}/>
+  <Player top={12} left={90} name={userRight.username}
+    points={gameState.points[userRight.id]} round={gameState.roundPoints[userRight.id]}/>
 
   <!-- up box -->
-  <CardOpponentH top={10} left={50} num={roomState.gameState.hands[userUp.id].length}/>
-  <Player top={10} left={15} name={userUp.username}/>
+  <CardOpponentH top={5} left={50} num={gameState.hands[userUp.id].length}/>
+  <Player top={10} left={30} name={userUp.username}
+    points={gameState.points[userUp.id]} round={gameState.roundPoints[userUp.id]}/>
 </div>
