@@ -430,7 +430,7 @@ function initGameState (io, roomId) {
 
     for (let j = 0; j < 13; j++) {
       hand.push(deck[(i * 13) + j]);
-      if (deck[(i * 13) + j].suit === 'C' && deck[(i * 13) + j].value === '2') {
+      if (deck[(i * 13) + j] === 'C2') {
         room.gameState.turn = user.id;
       }
     }
@@ -451,7 +451,7 @@ function buildDeck () {
 
   for (let i = 0; i < suites.length; i++) {
     for (let j = 0; j < values.length; j++) {
-      deck[(i * 13) + j] = {'suit': suites[i], 'value': values[j]};
+      deck[(i * 13) + j] = suites[i] + values[j];
     }
   }
 
