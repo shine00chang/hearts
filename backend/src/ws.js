@@ -328,14 +328,59 @@ function trickend(io, roomId)
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
+  const trickCards = game.trick;
 
-  // TODO: find & set leader & turn
-  
+  // Find winner of current trick
+  const cardValues = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-  // TODO: update roundPoints
-  
+  const leader = game.leader;
+  const leadCard = trickCards[leader];
 
-  // TODO: clear trick
+  let winner = leader;
+
+  for (const player of users) {
+    const playerCard = trickCards[player.id];
+    const playerSuite = playerCard[0];
+    const playerValue = playerCard.substring(1);
+
+    const winnerValue = trickCards[winner].substring(1);
+
+    if (playerSuite === leadCard[0] && cardValues.indexOf(playerValue) > cardValues.indexOf(winnerValue)) {
+      winner = player.id;
+    }
+  }
+
+  // Winner of the trick is the leader of the next trick
+  game.leader = winner;
+  game.turn = winner;
+
+  // Updating roundPoints
+  let heartCount = 0;
+  let qSpades = false;
+
+  for (const user of users) {
+    const userCard = trickCards[user.id];
+
+    if (userCard[0] === 'H') {
+      heartCount++;
+    }
+    
+    if (userCard === 'SQ') {
+      qSpades = true;
+    }
+  }
+
+  // Hearts broken if any hearts has been played
+  if (heartCount > 0) {
+    game.heartsBroken = true;
+  }
+
+  const points = heartCount + 13 * qSpades;
+  game.roundPoints[winner] += points;
+
+  game.trick = {};
+
+  // TODO: Anything to emit? 
 }
 
 function roundend(io, roomId)
