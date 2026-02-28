@@ -65,7 +65,7 @@ export const createGameUsersTable = async () => {
 export const createSessionTable = async () => {
   await db.query(`
   CREATE TABLE IF NOT EXISTS sessions (
-    session_id STRING NOT NULL 
+    session_id TEXT NOT NULL,
     user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     time_started TIMESTAMP NOT NULL DEFAULT now()
   );
@@ -82,7 +82,7 @@ export const createAllTables = async () => {
 };
 
 
-export const addUser = async (username, password_hash) => { 
+export const createUser = async (username, password_hash) => { 
   try {
     await db.query(
       `INSERT INTO users (username, password_hash) VALUES ($1, $2)`,
@@ -104,7 +104,7 @@ export const addUser = async (username, password_hash) => {
  */
 export const getUser = async (user, type = true) => {
   try {
-    res = await db.query(`
+    const res = await db.query(`
       SELECT * FROM users WHERE ${type ? "username" : "id"} = $1`,
       [user]
     );
@@ -157,21 +157,29 @@ export const endRound = async (round_id, user_id, score) => {
   );
 };
 
+export const createSession = async (session_id, user_id) => {
+  await db.query(`
+    INSERT INTO sessions (session_id, user_id)
+    VALUES ($1, $2)`,
+    [session_id, user_id]
+  );
+}
+
 export const getSession = async (session_id) => {
   try {
     const res = await db.query(`
       SELECT * FROM sessions WHERE session_id = $1`,
       [session_id]
     ) 
-    return (!(res.rows.length === 0))
+    return (res.rows[0] || null)
   } catch (err) {
-    console.err(err);
+    console.error(err);
   }
 }
 
 export const deleteOldSessions = async () => {
   try {
-    const res = await db.query(`DELETE FROM sessions WHERE time_started < (now() - 'INTERVAL 2 HOUR')`)
+    const res = await db.query(`DELETE FROM sessions WHERE time_started < (now() - INTERVAL '2 HOUR')`)
     return res.rows[0];
   } catch (err) {
     console.log(err);
