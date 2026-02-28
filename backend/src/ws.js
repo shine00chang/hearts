@@ -340,8 +340,17 @@ function trickend(io, roomId)
 
 function roundend(io, roomId)
 {
-  // TODO: add round point to points
-  
+
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+
+  // TODO: Do we want to implement the shoot the moon rule??
+  for (const user of room.users) {
+    game.points[user.id] += game.roundPoints[user.id];
+  }
+
+  emitRoomState(io, roomId);
+
   // NOTE: For frontend, let's update the state after some timeout. This way, the frontend will see a 'round end'
   // state for a moment, which it then shows the round end screen for a while (say, 5s), after which it will see the
   // state has been updated to a new round, and it will exit out of that screen
@@ -349,13 +358,40 @@ function roundend(io, roomId)
   setTimeout(_ => {
     // NOTE: so here is where we'd update the state
 
-    // TODO: rebuild hands
-    
-    // check game end
+    // Check game end before rebuilding
     // NOTE: 20 point limit for testing
     if (game.points.values().some(x => x > 20)) {
       gameend(io, roomId);
     }
+
+    // Rebuild for next round
+    game.roundNumber++;
+    const deck = shuffleDeck(buildDeck());
+
+    for (const [i, user] of room.users.entries()) {
+      const hand = [];
+
+      for (let j = 0; j < 13; j++) {
+        hand.push(deck[(i * 13) + j]);
+        if (deck[(i * 13) + j] == 'C2') {
+          game.turn = user.id;
+          game.leader = user.id;
+        }
+      }
+
+      game.hands[user.id] = hand;
+      game.roundPoints[user.id] = 0;
+    }
+
+    game.passDirection = getPassDirection(game.roundNumber);
+    game.passing = (newDirection !== 'hold');
+    game.passes = {};
+    game.trick = {};
+    game.heartsBroken = false;
+
+
+    // Frontend should see new round
+    emitRoomState(io, roomId);
   }, 5000);
 }
 
