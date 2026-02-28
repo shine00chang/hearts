@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'node:http';
+import cookieParser  from 'cookie-parser'
+import * as crypto from 'crypto'
+import auth, { register, login } from './auth.js';
 
 import userRouter from './routes/user/router.js';
 import gameRouter from './routes/game/router.js';
@@ -9,7 +12,11 @@ import boardRouter from './routes/board/router.js';
 
 import setWS from './ws.js';
 
+const secret = crypto.randomBytes(16).toString('hex');
+
 const app = express();
+app.use(cookieParser(secret))
+app.use(express.json())
 const server = createServer(app);
 setWS(server);
 
