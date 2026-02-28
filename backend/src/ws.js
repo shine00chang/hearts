@@ -340,8 +340,16 @@ function trickend(io, roomId)
 
 function roundend(io, roomId)
 {
-  // TODO: add round point to points
-  
+
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+
+  const threshold = 20;
+
+  resolveShootTheMoon(game, room.users, threshold);
+
+  emitRoomState(io, roomId);
+
   // NOTE: For frontend, let's update the state after some timeout. This way, the frontend will see a 'round end'
   // state for a moment, which it then shows the round end screen for a while (say, 5s), after which it will see the
   // state has been updated to a new round, and it will exit out of that screen
@@ -349,13 +357,41 @@ function roundend(io, roomId)
   setTimeout(_ => {
     // NOTE: so here is where we'd update the state
 
-    // TODO: rebuild hands
-    
-    // check game end
+    // Check game end before rebuilding
     // NOTE: 20 point limit for testing
     if (game.points.values().some(x => x > 20)) {
       gameend(io, roomId);
+      return;
     }
+
+    // Rebuild for next round
+    game.roundNumber++;
+    const deck = shuffleDeck(buildDeck());
+
+    for (const [i, user] of room.users.entries()) {
+      const hand = [];
+
+      for (let j = 0; j < 13; j++) {
+        hand.push(deck[(i * 13) + j]);
+        if (deck[(i * 13) + j] == 'C2') {
+          game.turn = user.id;
+          game.leader = user.id;
+        }
+      }
+
+      game.hands[user.id] = hand;
+      game.roundPoints[user.id] = 0;
+    }
+
+    game.passDirection = getPassDirection(game.roundNumber);
+    game.passing = (game.passDirection !== 'hold');
+    game.passes = {};
+    game.trick = {};
+    game.heartsBroken = false;
+
+
+    // Frontend should see new round
+    emitRoomState(io, roomId);
   }, 5000);
 }
 
@@ -457,5 +493,52 @@ function copyVals (arrayOne, arrayTwo) {
     const suite = arrayTwo[i].suite;
     const val = arrayTwo[i].value;
     arrayOne[i] = {suite: suite, value: val};
+  }
+}
+
+function resolveShootTheMoon (game, users, threshold) {
+  const shooter = users.find(u => game.roundPoints[u.id] === 26);
+
+  if (!shooter) {
+    // No player earned all 26 points (no shoot/normal scoring)
+
+    for (const user of users) {
+      game.points[user.id] += game.roundPoints[user.id];
+    }
+    return;
+  }
+
+  /*
+   * Optimal implementation of shooting the moon scoring for the player
+   * No frontend communication needed
+   * 
+   * Player has two choices in shooting the moon: 
+   * 1) Add 26 points to all other scores
+   * 2) Subtract 26 points from their own score
+   * 
+   * Player should only add 26 points to all other scores if either the 
+   * game does not end or the game does end but with the shooter winning
+   */ 
+
+  // Simulate adding 26 to all non-shooter players
+  const simulated = {};
+
+  for (const user of users) {
+    simulated[user.id] = game.points[user.id] + (user.id !== shooter.id ? 26 : 0);
+  }
+
+  const gameEndsIfAdd = users.some(u => simulated[u.id] >= threshold);
+  const shooterWinsIfAdd = !users.some(u => simulated[u.id] < simulated[shooter.id]);
+
+  if (!gameEndsIfAdd || shooterWinsIfAdd) {
+    // Safe to add 26 points to all non-shooter players
+    for (const user of users) {
+      if (user.id !== shooter.id) {
+        game.points[user.id] += 26;
+      }
+    }
+  }
+  else {
+    game.points[shooter.id] -= 26;
   }
 }
