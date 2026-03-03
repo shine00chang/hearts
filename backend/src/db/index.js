@@ -177,11 +177,71 @@ export const getSession = async (session_id) => {
   }
 }
 
+export const deleteSession = async (sessionid) => {
+  try {
+    const res = await db.query(`
+      DELETE FROM sessions WHERE session_id = $1`,
+      [sessionid]
+    );
+    return res.rows[0];
+  } catch (err) {
+    console.log(err);
+  }
+}
 export const deleteOldSessions = async () => {
   try {
     const res = await db.query(`DELETE FROM sessions WHERE time_started < (now() - INTERVAL '2 HOUR')`)
     return res.rows[0];
   } catch (err) {
     console.log(err);
+  }
+}
+
+export const getUserGames = async (userId) => {
+  try {
+    const res = await db.query(`
+      WITH RoundScores AS (
+        SELECT 
+          rr.round_id,
+          json_agg(
+            json_build_object(
+              'user_id', rr.user_id,
+              'username', u.username,
+              'score', rr.score
+            )
+          ) AS scores
+        FROM round_result rr
+        JOIN users u ON rr.user_id = u.id
+        GROUP BY rr.round_id
+      ),
+      GameRounds AS (
+        SELECT 
+          r.game_id,
+          json_agg(
+            json_build_object(
+              'round_id', r.round_id,
+              'round_number', r.round_number,
+              'time_started', r.time_started,
+              'scores', COALESCE(rs.scores, '[]'::json)
+            ) ORDER BY r.round_number ASC
+          ) AS rounds
+        FROM round r
+        LEFT JOIN RoundScores rs ON r.round_id = rs.round_id
+        GROUP BY r.game_id
+      )
+      SELECT 
+        g.game_id, 
+        g.time_started, 
+        g.status, 
+        gu.seat AS my_seat,
+        COALESCE(gr.rounds, '[]'::json) AS rounds
+      FROM game g
+      JOIN game_users gu ON g.game_id = gu.game_id AND gu.player_id = $1
+      LEFT JOIN GameRounds gr ON g.game_id = gr.game_id
+      ORDER BY g.time_started DESC;`,
+      [userId]);
+      return res.rows;
+  } catch (err) {
+    console.error(err);
   }
 }

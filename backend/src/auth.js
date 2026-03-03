@@ -13,11 +13,12 @@ export async function passwordCheck(password, hashed_password) {
 
 export default async function auth (req, res, next) {
   let authed = false;
-  if (typeof req.signedCookies.sessionid === 'string') {
+  if (typeof req.cookies.sessionid === 'string') {
     db.deleteOldSessions()
-    const session = await db.getSession(req.signedCookies.sessionid)
+    const session = await db.getSession(req.cookies.sessionid)
     if (session) {
       req.user = await db.getUser(session.user_id, false);
+      delete req.user.password_hash
       authed = true;
     }
   }
@@ -63,15 +64,27 @@ export async function login (req, res) {
   const sessionId = crypto.randomUUID();
   await db.createSessionTable()
   await db.createSession(sessionId, user.id)
-  res.cookie('sessionid', sessionId, { signed: true});
+  res.cookie('sessionid', sessionId, { signed: false});
   res.redirect('/');
 }
 
-export function wsauth (session) 
-{
-  // TODO: Check signed session cookie
-  return {
-    id: 'xyz',
-    username: 'not authed',
-  };
+export async function logout (req, res) {
+  const sessionId = req.cookies.sessionid;
+  if (sessionId) {
+    await db.deleteSession(sessionId)
+  } else {
+    console.error("logout from authed user, but has no session id in cookie?")
+  }
+  res.clearCookie('sessionid')
+  res.send("logout success")
 }
+
+export async function wsauth (sessionId) {
+  const session = await db.getSession(sessionId)
+  if (session) {
+    return await db.getUser(session.user_id, false);
+  }
+
+  return null;
+}
+
