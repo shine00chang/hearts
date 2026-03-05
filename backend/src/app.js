@@ -3,7 +3,7 @@ import cors from 'cors';
 import { createServer } from 'node:http';
 import cookieParser  from 'cookie-parser'
 import * as crypto from 'crypto'
-import auth, { register, login } from './auth.js';
+import * as db from './db/index.js'
 
 import userRouter from './routes/user/router.js';
 import gameRouter from './routes/game/router.js';
@@ -19,6 +19,7 @@ app.use(cookieParser(secret))
 app.use(express.json())
 const server = createServer(app);
 setWS(server);
+await db.createAllTables()
 
 const PORT = 3000;
 

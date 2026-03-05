@@ -21,6 +21,7 @@ export const createGameTable = async() => {
   CREATE TABLE IF NOT EXISTS game (
     game_id SERIAL PRIMARY KEY,
     time_started TIMESTAMP NOT NULL DEFAULT now(),
+    
     status TEXT NOT NULL CHECK (status IN ('in-progress', 'done', 'abandoned'))
   );
 `);
@@ -194,6 +195,44 @@ export const deleteOldSessions = async () => {
     return res.rows[0];
   } catch (err) {
     console.log(err);
+  }
+}
+
+export const getLeaderboard = async () => {
+  try {
+    const res = await db.query(`
+      WITH GameScores AS (
+          SELECT 
+              r.game_id, 
+              rr.user_id, 
+              SUM(rr.score) AS total_score
+          FROM round r
+          JOIN round_result rr ON r.round_id = rr.round_id
+          JOIN game g ON r.game_id = g.game_id
+          WHERE g.status = 'done'
+          GROUP BY r.game_id, rr.user_id
+      ),
+      RankedGames AS (
+          SELECT 
+              game_id, 
+              user_id, 
+              total_score,
+              RANK() OVER (PARTITION BY game_id ORDER BY total_score ASC) as rank
+          FROM GameScores
+      )
+      SELECT 
+          u.username, 
+          COUNT(rg.game_id) AS games_won
+      FROM RankedGames rg
+      JOIN users u ON rg.user_id = u.id
+      WHERE rg.rank = 1
+      GROUP BY u.id, u.username
+      ORDER BY games_won DESC;
+    `);
+
+    return res.rows
+  } catch (err) {
+    console.error(err);
   }
 }
 

@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/', auth, (req, res) => {
   console.log(req.user);
-  return res.json(req.user); // this techincally has the hash but if someone reverses the hash function from this i will be impressed
+  return res.json(req.user);
 });
 
 router.post('/create', register)
