@@ -34,7 +34,8 @@ function setSocket (socket, io)
   const { session } = socket.handshake.auth;
   let { roomId } = socket.handshake.query;
 
-  const user = wsauth(session);
+  //const user = wsauth(session);
+  const user = { username: 'turtles', id: 'turtles' };
 
   if (typeof roomId == 'string' && roomId.length == 4) {
     console.log(`user connected requesting roomId: ${roomId}, with session token: ${session}`);

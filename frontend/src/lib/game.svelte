@@ -1,4 +1,6 @@
 <script>
+  import { goto } from '$app/navigation';
+
   import Card from '$lib/card.svelte';
   import CardOpponentLR from '$lib/cardOppLR.svelte';
   import CardOpponentH from '$lib/cardOppH.svelte';
@@ -6,6 +8,7 @@
   import Me from '$lib/me.svelte';
   import Center from '$lib/center.svelte';
   import Trick from '$lib/trick.svelte';
+  import Modal from '$lib/modal.svelte';
 
   import { CARD } from '$lib/configs.ts';
 
@@ -15,9 +18,8 @@
   let gameState = $derived(roomState.gameState);
 
   // derived states
-  let cards = $derived.by(_ => {
-    console.log(gameState);
-
+  let gameEnd = $state(false);//$derived(gameState.gameEnd);
+  let cards = $derived.by(_ => { // generate card graphics from the list of cards
     const hand = gameState.hands[me];
 
     const gap = (hand_width - CARD.WIDTH) / (hand.length-1);
@@ -29,9 +31,13 @@
         value: card,
       };
     });
-    console.log('cards:', cards);
-
     return cards;
+  });
+  let rank = $derived.by(_ => {
+    const k = Object.entries(gameState.points)
+      .map(([k, v]) => { return { name: roomState.users.find(o => o.id == k).username, points: v } })
+      .sort((a, b) => a.points - b.points);
+    return k;
   });
 
   // states
@@ -42,7 +48,7 @@
   // TODO: need to dynamically generate this too. gotta make something for turn order
   let userLeft = roomState.users.find(o => o.id === 'bessie');
   let userRight = roomState.users.find(o => o.id === 'alice');
-  let userUp = roomState.users.find(o => o.id === 'xyz');
+  let userUp = roomState.users.find(o => o.id === 'cow');
   let userMe = roomState.users.find(o => o.id === me);
 
   const directionToNumber = d => {
@@ -184,4 +190,31 @@
   <CardOpponentH top={5} left={50} num={gameState.hands[userUp.id].length}/>
   <Player top={10} left={30} name={userUp.username}
     points={gameState.points[userUp.id]} round={gameState.roundPoints[userUp.id]}/>
+
+  <!-- game over -->
+  <button on:click={_=>gameEnd = true}>end round</button>
+  {#if gameEnd}
+    <Modal bind:showModal={gameEnd} onclose={_ => goto('/')}>
+      <div class="w-96">
+        <table class="table-auto">
+          <thead>
+            <tr>
+              <th class='w-12'></th>
+              <th class='w-6'></th>
+              <th class='w-12'></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each rank as user, index}
+              <tr>
+                <td class='text-xl font-thin'>0{index+1}</td>
+                <td>{user.points}</td>
+                <td>{user.name}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+  {/if}
 </div>
