@@ -20,6 +20,7 @@
   // derived states
   let gameEnd = $state(false);//$derived(gameState.gameEnd);
   let cards = $derived.by(_ => { // generate card graphics from the list of cards
+    console.log(gameState);
     const hand = gameState.hands[me];
 
     const gap = (hand_width - CARD.WIDTH) / (hand.length-1);

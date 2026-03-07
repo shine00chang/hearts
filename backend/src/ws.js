@@ -152,13 +152,17 @@ function handlePass (io, roomId, userId, cards)
   const game = room.gameState; 
 
   game.passes[userId] = cards;
+  
+  // Testing code
+  for (const user of room.users) {
+    if (user.id == userId) continue;
+    game.passes[user.id] = game.hands[user.id].slice(0,3);
+  }
 
-  /*
   // if all players involved have selected their 3 cards, pass
   for (const user of room.users)
     if (!game.passes[user.id] || game.passes[user.id].length < 3)
       return;
-  */
 
   pass(io, roomId);
 }
@@ -169,103 +173,63 @@ function pass(io, roomId)
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
+  const { directionMap, passes } = game;
   const direction = getPassDirection(game.roundNumber);
 
-  /*
   // Make sure that all players involved have selected their 3 cards before passing
-  for (const user of room.users)
+  for (const user of users)
     if (!passes[user.id] || passes[user.id].length < 3)
       return;
-  */
 
-  game.hands['xyz'] = game.hands['xyz'].filter(card => !game.passes['xyz'].includes(card));
-  game.hands['xyz'].push("D13", "D12", "S13");
-  game.passing = false;
-  game.passes = {};
+  // Construct pass map
+  const passMap = {}
+  if (direction == 'right')
+    for (let i=0; i<4; i++)
+      passMap[directionMap[i]] = directionMap[(i+1)%4];
+  if (direction == 'left')
+    for (let i=0; i<4; i++)
+      passMap[directionMap[i]] = directionMap[(i+3)%4];
+  if (direction == 'across')
+    for (let i=0; i<4; i++)
+      passMap[directionMap[i]] = directionMap[(i+2)%4];
 
-  game.turn = 'xyz';
-  game.leader = 'bessie';
-  game.trick = { bessie: "D1" };
+  // Remove passed cards
+  for (const user of users) {
+    game.hands[user.id] = game.hands[user.id].filter(card => !passes[user.id].includes(card));
+  }
 
+  // Add cards
+  for (const [a, b] of Object.entries(passMap)) {
+    game.hands[b].push(...passes[a]);
+  }
+
+  console.log(game);
+
+  // Start trick
+  firstTrick(io, roomId);
   emitRoomState(io, roomId);
-  // NOTE: not going to lie i'm ignoring all this
   return;
-  /*
-   * Each player has two card arrays: hands[userId] (stores all the cards they currently have including passing cards) and passing[userId] (stores cards to be passed)
-   * 
-   * 1) First remove all passing.get(userId) cards from the hands.get(userId) array
-   * 2) Perform appropriate exchange operations on passing[userId] map
-   * 3) Push all passing[userId] cards back onto the hands[userId] map
-   */
+}
+
+function firstTrick(io, roomId) 
+{
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+  const users = room.users;
+
+  let leader;
+  for (const user of users)
+    if (game.hands[user.id].includes("C2"))
+      leader = user.id;
+
+  game.turn = leader;
+  game.leader = leader;
   
-
-  // Removing passing cards from hands
-  let hands = room.gameState.hands;
-  for (let i = 0; i < 4; i++) {
-    const userId = room.users[i].id;
-    let passing = room.gameState.passing.get(userId);
-    let curHand = hands.get(userId);
-    
-
-    for (let j = 0; j < 3; j++) {
-      const index = findIndex(passing[j].suite, passing[j].value, curHand);
-      curHand.splice(index, 1);
-    }
-  }
-
-  // Appropriate operations
-  if (direction == 'left') {
-    let temp = [];
-    copyVals(temp, passingBuffer.get(users[3].id));
-    copyVals(passingBuffer.get(users[3].id), passingBuffer.get(users[2].id));
-    copyVals(passingBuffer.get(users[2].id), passingBuffer.get(users[1].id));
-    copyVals(passingBuffer.get(users[1].id), passingBuffer.get(users[0].id));
-    copyVals(passingBuffer.get(users[0].id), temp);
-  }
-  else if (direction == 'right') {
-    let temp = [];
-    copyVals(temp, passingBuffer.get(users[0].id));
-    copyVals(passingBuffer.get(users[0].id), passingBuffer.get(users[1].id));
-    copyVals(passingBuffer.get(users[1].id), passingBuffer.get(users[2].id));
-    copyVals(passingBuffer.get(users[2].id), passingBuffer.get(users[3].id));
-    copyVals(passingBuffer.get(users[3].id), temp);
-  }
-  else {
-    let temp = [];
-    copyVals(temp, passingBuffer.get(users[0].id));
-    copyVals(passingBuffer.get(users[0].id), passingBuffer.get(users[2].id));
-    copyVals(passingBuffer.get(users[2].id), temp);
-
-    copyVals(temp, passingBuffer.get(users[1].id));
-    copyVals(passingBuffer.get(users[1].id), passingBuffer.get(users[3].id));
-    copyVals(passingBuffer.get(users[3].id), temp);
-  }
-
-  // Push passing[userId] cards to hands[userId] cards
-  for (let i = 0; i < 4; i++) {
-    const userId = room.users[i].id;
-    let passing = room.gameState.passing.get(userId);
-    let curHand = hands.get(userId);
-
-    for (let j = 0; j < 3; j++) {
-      curHand.push(passing[j]);
-    }
-  }
-
-  game.phase = 'playing';
-
-  // Emit new hands for each player
-  for (let i = 0; i < 4; i++) {
-    const userId = room.users[i].id;
-    const socketId = socketIdMap.get(userId);
-
-    io.to(socketId).emit('passdone', {
-      hand: game.hands.get(userId),
-      phase: game.phase, 
-    });
-  }
-
-  io.to(roomId).emit('phasechange', { phase: game.phase });
+  // Testing code:
+  setTimeout(_ => {
+    console.log('setting fake trick');
+    game.trick[leader] = "C2";
+  }, 10000);
 }
 
 function handlePlay (io, roomId, userId, card) 
@@ -274,7 +238,6 @@ function handlePlay (io, roomId, userId, card)
   const game = room.gameState;
   const users = room.users;
   const leader = game.leader;
-
 
   // Check if turn
   if (userId !== game.turn) {
@@ -471,9 +434,9 @@ function gameend(io, roomId)
 
 // Creates the game state object
 function initGameState (io, roomId) {
+  const room = rooms.get(roomId);
   let deck = shuffleDeck(buildDeck());
 
-  let room = rooms.get(roomId);
   room.gameState = {
     hands: {},        // userId -> Cards[] (13 cards for each player)
 
@@ -487,6 +450,7 @@ function initGameState (io, roomId) {
     roundPoints: {},
     points: {},
     roundNumber: 1,
+    directionMap: room.users.map(user => user.id),
   };
 
   // for each user

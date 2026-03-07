@@ -19,7 +19,7 @@ app.use(cookieParser(secret))
 app.use(express.json())
 const server = createServer(app);
 setWS(server);
-await db.createAllTables()
+//await db.createAllTables()
 
 const PORT = 3000;
 
