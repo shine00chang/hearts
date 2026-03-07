@@ -137,6 +137,9 @@
     position: fixed;
     position-anchor: --hand-box;
   }
+  .card-transitions {
+    transition: top 0.1s;
+  }
 </style>
 
 <div class='h-screen w-screen bg-slate-100'>
@@ -166,10 +169,8 @@
 
   <!-- player box -->
   <div class='handbox-pos h-{CARD.HEIGHT}px' bind:clientWidth={hand_width}>
-
-
     {#each cards as card}
-      <div on:click={_ => cardclick(card)} class='cardbox' style='left: {card.x}px; top: {card.y}px;'>
+      <div on:click={_ => cardclick(card)} class='cardbox card-transitions' style='left: {card.x}px; top: {card.y}px;'>
         <Card value={card.value} height={CARD.HEIGHT}/>
       </div>
     {/each}

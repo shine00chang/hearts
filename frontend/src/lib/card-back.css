@@ -1,0 +1,12 @@
+.pattern {
+  height:100%;
+  width:100%;
+  font-size: min(1vh, 0.15rem);
+  background-color: white;
+  /* pattern from https://projects.verou.me/css3patterns/#marrakesh */
+  background-image:
+  radial-gradient(gainsboro 0.9em, transparent 1em),
+  repeating-radial-gradient(gainsboro 0, gainsboro 0.4em, transparent 0.5em, transparent 2em, gainsboro 2.1em, gainsboro 2.5em, transparent 2.6em, transparent 5em);
+  background-size: 3em 3em, 9em 9em;
+  background-position: 0 0;
+}
