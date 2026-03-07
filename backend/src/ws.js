@@ -239,12 +239,17 @@ function handlePlay (io, roomId, userId, card)
   const users = room.users;
   const leader = game.leader;
 
+  // If its the first round, the leader must play C2
+  if (game.roundNumber === 1 && userId === leader && card !== "C2") {
+    io.to(socketIdMap.get(userId)).emit('illegalmove');
+    return;
+  }
+
   // Check if turn
   if (userId !== game.turn) {
     io.to(socketIdMap.get(userId)).emit('illegalmove');
     return;
   }
-
 
   // Check if card in hand
   const hasCard = game.hands[userId].some(c => c === card);
@@ -252,7 +257,6 @@ function handlePlay (io, roomId, userId, card)
     io.to(socketIdMap.get(userId)).emit('illegalmove');
     return;
   }
-
 
   // Card must follow suit if possible
   if (leader !== userId) {
@@ -265,7 +269,6 @@ function handlePlay (io, roomId, userId, card)
     }
   }
 
-
   // Cannot lead hearts until hearts are broken
   if (userId === leader && card[0] === 'H' && !game.heartsBroken) {
     const hasNonHeart = game.hands[userId].some(c => c[0] !== 'H');
@@ -277,9 +280,7 @@ function handlePlay (io, roomId, userId, card)
     game.heartsBroken = true;
   }
 
-
   console.log('someone played: ', userId, card);
-
 
   // Remove card from hand
   game.hands[userId] = game.hands[userId].filter(i => i != card);
@@ -287,12 +288,16 @@ function handlePlay (io, roomId, userId, card)
   // set trick
   game.trick[userId] = card;
 
-
   // check trick end
   if (games.trick.keys().length == 4) {
     trickend(io, roomId);
   }
-
+  else {
+    // Advance game.turn
+    const idx = users.findIndex(u => u.id === userId);
+    const nextIdx = (idx + 1) % users.length;
+    game.turn = users[nextIdx].id;
+  }
 
   // check round end
   // calculates if all hands empty
@@ -300,10 +305,8 @@ function handlePlay (io, roomId, userId, card)
     roundend(io, roomId);
   }
 
-
   // NOTE: game end check happens in the round end timeout, since we want to show
   // the round end screen before we get to the game end screen
-
 
   emitRoomState(io, roomId);
 }
