@@ -270,38 +270,77 @@ function pass(io, roomId)
 
 function handlePlay (io, roomId, userId, card) 
 {
-  // TODO: check if turn
-  // TODO: check if card in hand
-
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
+  const leader = game.leader;
 
 
-  // change hands
+  // Check if turn
+  if (userId !== game.turn) {
+    io.to(socketIdMap.get(userId)).emit('illegalmove');
+    return;
+  }
+
+
+  // Check if card in hand
+  const hasCard = game.hands[userId].some(c => c === card);
+  if (!hasCard) {
+    io.to(socketIdMap.get(userId)).emit('illegalmove');
+    return;
+  }
+
+
+  // Card must follow suit if possible
+  if (leader !== userId) {
+    if (game.trick[leader][0] !== card[0]) {
+      const hasSuit = game.hands[userId].some(c => c[0] === game.trick[leader][0]);
+      if (hasSuit) {
+        io.to(socketIdMap.get(userId)).emit('illegalmove');
+        return;
+      }
+    }
+  }
+
+
+  // Cannot lead hearts until hearts are broken
+  if (userId === leader && card[0] === 'H' && !game.heartsBroken) {
+    const hasNonHeart = game.hands[userId].some(c => c[0] !== 'H');
+    if (hasNonHeart) {
+      io.to(socketIdMap.get(userId)).emit('illegalmove');
+      return;
+    }
+
+    game.heartsBroken = true;
+  }
+
+
   console.log('someone played: ', userId, card);
+
+
+  // Remove card from hand
   game.hands[userId] = game.hands[userId].filter(i => i != card);
-  
-  // set trick 
+
+  // set trick
   game.trick[userId] = card;
 
-  // NOTE: fake turns
-  game.trick['alice'] = 'S3';
-  game.turn = 'bessie';
 
   // check trick end
-  if (Object.keys(game.trick).length == 4) {
+  if (games.trick.keys().length == 4) {
     trickend(io, roomId);
   }
 
+
   // check round end
   // calculates if all hands empty
-  if (Object.entries(game.hands).reduce((a, [k, v]) => a + v.length, 0) == 0) {
+  if (games.hands.entries().reduce(([k, v], a) => a + v.length, 0) == 0) {
     roundend(io, roomId);
   }
 
+
   // NOTE: game end check happens in the round end timeout, since we want to show
   // the round end screen before we get to the game end screen
+
 
   emitRoomState(io, roomId);
 }
