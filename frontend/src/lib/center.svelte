@@ -3,17 +3,21 @@
 </script>
 
 <div style='transform: translate(-50%, -50%); position:absolute; top:40%; left:50%;' 
-  class='w-24 h-24 rounded-lg bg-white flex flex-col align-center items-center'>
-  <div>
-    {broken ? 'broken :(' : 'heart' }
+  class='w-24 h-24 rounded-lg bg-white flex flex-col place-content-center align-center items-center'>
+  <div class='text-lg'>
+    {#if passing}
+      pass
+    {:else}
+      {broken ?  '💔' : '❤️' }
+    {/if}
   </div>
   {#if passing}
-    <div style='transform: rotate({0.25 * pass}turn)'>
-      A
+    <div style='transform: rotate({0.25 * (pass+1)}turn)'>
+      ➜
     </div>
   {:else}
-    <div style='transform: rotate({0.25 * turn}turn)'>
-      ^
+    <div style='transform: rotate({0.25 * (turn+1)}turn)'>
+      ➜
     </div>
   {/if}
 </div>
