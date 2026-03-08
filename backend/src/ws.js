@@ -448,13 +448,30 @@ function roundend(io, roomId)
   }, 5000);
 }
 
-function gameend(io, roomId)
+async function gameend(io, roomId)
 {
   const room = rooms.get(roomId);
   const game = room.gameState;
-  game.over = true;
+  const users = room.users;
 
-  // TODO: need to send to DB
+  try {
+    const gameRow = await createGame();
+    const gameId = gameRow.game_id;
+
+    for (const [seat, u] of users.entries()) {
+      await addPlayerToGame(gameId, u.dbId, seat);
+    }
+
+    const roundRow = await createRound(gameId, game.roundNumber);
+    const roundId = roundRow.round_id;
+
+    for (const u of users) {
+      const score = game.points[u.id];
+      await endRound(roundId, u.dbId, score);
+    }
+  } catch (err) {
+    console.error("Error sending game result to db");
+  }
 }
 
 // GAME BUILDERS: 
