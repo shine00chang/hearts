@@ -16,8 +16,8 @@
     - room number input
 - leaderboard button
 
-*Self*
-- list your game results
+*Search*
+- search for games of specific player
 
 *Leaderboard*
 - list of users
@@ -40,7 +40,7 @@
 /room/join POST: redirects to room with room code
 *Note: Room leave ready/unready is handled by websocket. since start needs to be pushed*
 
-/game/own GET: returns your own games
+/game/search?{username} GET: returns the games of username
 
 **Notable Internal Functions**
 post-game-result() : tallies game results to user stats and updates leaderboard 

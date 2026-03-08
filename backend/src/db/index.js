@@ -236,7 +236,7 @@ export const getLeaderboard = async () => {
   }
 }
 
-export const getUserGames = async (userId) => {
+export const getUserGames = async (username) => {
   try {
     const res = await db.query(`
       WITH RoundScores AS (
@@ -275,12 +275,15 @@ export const getUserGames = async (userId) => {
         gu.seat AS my_seat,
         COALESCE(gr.rounds, '[]'::json) AS rounds
       FROM game g
-      JOIN game_users gu ON g.game_id = gu.game_id AND gu.player_id = $1
+      JOIN game_users gu ON g.game_id = gu.game_id
+      JOIN users curr_user ON gu.player_id = curr_user.id
       LEFT JOIN GameRounds gr ON g.game_id = gr.game_id
+      WHERE curr_user.username = $1
       ORDER BY g.time_started DESC;`,
-      [userId]);
-      return res.rows;
+      [username]
+    );
+    return res.rows;
   } catch (err) {
     console.error(err);
   }
-}
+};
