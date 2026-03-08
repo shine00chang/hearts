@@ -10,6 +10,7 @@
     height: 100px;
     width: 70px;
     padding: 0.2rem;
+    transition: left 0.1s;
   }
 </style>
 

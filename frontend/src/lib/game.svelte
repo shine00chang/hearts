@@ -18,7 +18,8 @@
   let gameState = $derived(roomState.gameState);
 
   // derived states
-  let gameEnd = $state(false);//$derived(gameState.gameEnd);
+  let clickedOver = $state(false);
+  let gameEnd = $derived(gameState.over || clickedOver);
   let cards = $derived.by(_ => { // generate card graphics from the list of cards
     console.log(gameState);
     const hand = gameState.hands[me];
@@ -47,9 +48,19 @@
   let actions = $state([]);
 
   // TODO: need to dynamically generate this too. gotta make something for turn order
-  let userLeft = roomState.users.find(o => o.id === 'bessie');
-  let userRight = roomState.users.find(o => o.id === 'alice');
-  let userUp = roomState.users.find(o => o.id === 'cow');
+  let meInDirectionMap = $derived(gameState.directionMap.indexOf(me));
+  let userUp = $derived.by(_ => {
+    const id = gameState.directionMap[(meInDirectionMap+2)%4];
+    return roomState.users.find(o => o.id == id);
+  });
+  let userLeft = $derived.by(_ => {
+    const id = gameState.directionMap[(meInDirectionMap+3)%4];
+    return roomState.users.find(o => o.id == id);
+  });
+  let userRight = $derived.by(_ => {
+    const id = gameState.directionMap[(meInDirectionMap+1)%4];
+    return roomState.users.find(o => o.id == id);
+  });
   let userMe = roomState.users.find(o => o.id === me);
 
   const directionToNumber = d => {
@@ -89,9 +100,16 @@
       return;
 
     // check if suite is right
-    const lead = gameState.trick[gameState.leader].charAt(0);
-    if (gameState.hands[me].some(card => card.charAt(0) == lead) && card.value.charAt(0) != lead)
-      return;
+    if (gameState.leader != me) {
+      const lead = gameState.trick[gameState.leader].charAt(0);
+      if (gameState.hands[me].some(card => card.charAt(0) == lead) && card.value.charAt(0) != lead)
+        return;
+    }
+
+    // if leader, check if broken hearts
+    if (gameState.leader == me)
+      if (gameState.heartsBroken == false && card.value.charAt(0) == 'H' && gameState.hands[me].some(card => card.charAt(0) != 'H'))
+        return;
 
     if (!playbuffer) actions.push(actionPlay);
     if (card.value == playbuffer) {
@@ -139,7 +157,7 @@
     position-anchor: --hand-box;
   }
   .card-transitions {
-    transition: top 0.1s;
+    transition: top 0.1s, left 0.1s;
   }
 </style>
 
@@ -151,7 +169,7 @@
           passing={gameState.passing} 
           broken={gameState.heartsBroken} 
           turn={directionToNumber(gameState.turn)}
-          pass={directionToNumber(gameState.passDirection)}/>
+          pass={gameState.passDirection}/>
 
   <!-- trick box -->
   <Trick left={gameState.trick[userLeft.id]}
@@ -194,7 +212,7 @@
     points={gameState.points[userUp.id]} round={gameState.roundPoints[userUp.id]}/>
 
   <!-- game over -->
-  <button on:click={_=>gameEnd = true}>end round</button>
+  <button on:click={_=>clickedOver = true}>end round</button>
   {#if gameEnd}
     <Modal bind:showModal={gameEnd} onclose={_ => goto('/')}>
       <div class="w-96">

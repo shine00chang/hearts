@@ -167,6 +167,27 @@ function handlePass (io, roomId, userId, cards)
   pass(io, roomId);
 }
 
+// Testing code
+function fakeplay(io, roomId) 
+{
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+  let card = undefined;
+  if (game.leader != game.turn)
+    card = game.hands[game.turn].find(card => game.trick[game.leader].charAt(0) == card.charAt(0));
+  if (card === undefined) {
+    if (!game.heartsBroken)
+      card = game.hands[game.turn].find(card => card.charAt(0) != 'H');
+    else
+      card = game.hands[game.turn][0];
+    if (card == undefined)
+      card = game.hands[game.turn][0];
+  }
+
+  console.log(`fake playing ${card} for ${game.turn}`);
+  handlePlay(io, roomId, game.turn, card);
+}
+
 // Swaps cards and emits state
 function pass(io, roomId)
 {
@@ -203,6 +224,8 @@ function pass(io, roomId)
     game.hands[b].push(...passes[a]);
   }
 
+  game.passing = false;
+
   console.log(game);
 
   // Start trick
@@ -226,17 +249,15 @@ function firstTrick(io, roomId)
   game.leader = leader;
   
   // Testing code:
-  setTimeout(_ => {
-    console.log('setting fake trick');
-    game.trick[leader] = "C2";
-  }, 10000);
+  setTimeout(_ => fakeplay(io, roomId), 3000);
 }
 
 function handlePlay (io, roomId, userId, card) 
 {
+  console.log('someone played: ', userId, card);
+
   const room = rooms.get(roomId);
   const game = room.gameState;
-  const users = room.users;
   const leader = game.leader;
 
   // If its the first round, the leader must play C2
@@ -250,14 +271,12 @@ function handlePlay (io, roomId, userId, card)
     io.to(socketIdMap.get(userId)).emit('illegalmove');
     return;
   }
-
   // Check if card in hand
   const hasCard = game.hands[userId].some(c => c === card);
   if (!hasCard) {
     io.to(socketIdMap.get(userId)).emit('illegalmove');
     return;
   }
-
   // Card must follow suit if possible
   if (leader !== userId) {
     if (game.trick[leader][0] !== card[0]) {
@@ -268,7 +287,6 @@ function handlePlay (io, roomId, userId, card)
       }
     }
   }
-
   // Cannot lead hearts until hearts are broken
   if (userId === leader && card[0] === 'H' && !game.heartsBroken) {
     const hasNonHeart = game.hands[userId].some(c => c[0] !== 'H');
@@ -280,33 +298,30 @@ function handlePlay (io, roomId, userId, card)
     game.heartsBroken = true;
   }
 
-  console.log('someone played: ', userId, card);
-
   // Remove card from hand
   game.hands[userId] = game.hands[userId].filter(i => i != card);
 
   // set trick
   game.trick[userId] = card;
 
+  // find next turn
+  game.turn = game.directionMap[(game.directionMap.indexOf(game.turn)+1)%4];
+
+  // Testing code
+  if (Object.keys(game.trick).length != 4 && game.turn != 'turtles')
+    setTimeout(_ => fakeplay(io, roomId), 1000);
+
   // check trick end
-  if (games.trick.keys().length == 4) {
-    trickend(io, roomId);
-  }
-  else {
-    // Advance game.turn
-    const idx = users.findIndex(u => u.id === userId);
-    const nextIdx = (idx + 1) % users.length;
-    game.turn = users[nextIdx].id;
-  }
+  if (Object.keys(game.trick).length == 4) {
+    const store = game.turn;
+    game.turn = userId;
 
-  // check round end
-  // calculates if all hands empty
-  if (games.hands.entries().reduce(([k, v], a) => a + v.length, 0) == 0) {
-    roundend(io, roomId);
+    setTimeout(_ => {
+      game.turn = store;
+      trickend(io, roomId);
+      emitRoomState(io, roomId);
+    }, 1000);
   }
-
-  // NOTE: game end check happens in the round end timeout, since we want to show
-  // the round end screen before we get to the game end screen
 
   emitRoomState(io, roomId);
 }
@@ -368,7 +383,14 @@ function trickend(io, roomId)
 
   game.trick = {};
 
-  // TODO: Anything to emit? 
+  // check round end
+  // calculates if all hands empty
+  if (Object.entries(game.hands).reduce((a, [k, v]) => a + v.length, 0) == 0) {
+    roundend(io, roomId);
+  }
+
+  if (game.turn != 'turtles')
+    setTimeout(_ => fakeplay(io, roomId), 1000);
 }
 
 function roundend(io, roomId)
@@ -379,7 +401,7 @@ function roundend(io, roomId)
 
   const threshold = 20;
 
-  resolveShootTheMoon(game, room.users, threshold);
+  resolveShootTheMoon(roomId, threshold);
 
   emitRoomState(io, roomId);
 
@@ -392,7 +414,7 @@ function roundend(io, roomId)
 
     // Check game end before rebuilding
     // NOTE: 20 point limit for testing
-    if (game.points.values().some(x => x > 20)) {
+    if (Object.values(game.points).some(x => x > 20)) {
       gameend(io, roomId);
       return;
     }
@@ -413,7 +435,6 @@ function roundend(io, roomId)
       }
 
       game.hands[user.id] = hand;
-      game.roundPoints[user.id] = 0;
     }
 
     game.passDirection = getPassDirection(game.roundNumber);
@@ -422,7 +443,6 @@ function roundend(io, roomId)
     game.trick = {};
     game.heartsBroken = false;
 
-
     // Frontend should see new round
     emitRoomState(io, roomId);
   }, 5000);
@@ -430,6 +450,10 @@ function roundend(io, roomId)
 
 function gameend(io, roomId)
 {
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+  game.over = true;
+
   // TODO: need to send to DB
 }
 
@@ -508,26 +532,10 @@ function getPassDirection (roundNumber) {
   return 'hold';
 }
 
-function findIndex (suite, value, array) {
-  for (let i = 0; i < array.length; i++) {
-    if (array[i].suite === suite && array[i].value === value) {
-      return (i);
-    }
-  }
-
-  return (-1);
-}
-
-// Copy values from arrayTwo into arrayOne
-function copyVals (arrayOne, arrayTwo) {
-  for (let i = 0; i < arrayTwo.length; i++) {
-    const suite = arrayTwo[i].suite;
-    const val = arrayTwo[i].value;
-    arrayOne[i] = {suite: suite, value: val};
-  }
-}
-
-function resolveShootTheMoon (game, users, threshold) {
+function resolveShootTheMoon (roomId, threshold) {
+  const room = rooms.get(roomId);
+  const game = room.gameState;
+  const users = room.users;
   const shooter = users.find(u => game.roundPoints[u.id] === 26);
 
   if (!shooter) {
@@ -535,6 +543,7 @@ function resolveShootTheMoon (game, users, threshold) {
 
     for (const user of users) {
       game.points[user.id] += game.roundPoints[user.id];
+      game.roundPoints[user.id] = 0;
     }
     return;
   }

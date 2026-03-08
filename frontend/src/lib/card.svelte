@@ -29,7 +29,9 @@
     <div class='flex text-md w-full'>
       <div class='flex flex-col align-center items-center'>
         <div>{number}</div>
+        {#if height > 100}
         <div>{symbol}</div>
+        {/if}
       </div>
       <div class='flex-grow'></div>
     </div>
@@ -38,7 +40,9 @@
       <div class='flex-grow'></div>
       <div class='flex flex-col align-center items-center' style='transform: rotate(0.5turn);'>
         <div>{number}</div>
+        {#if height > 100}
         <div>{symbol}</div>
+        {/if}      
       </div>
     </div>
   </div>
