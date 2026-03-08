@@ -1,5 +1,12 @@
 import { Server } from 'socket.io';
 import { wsauth } from './auth.js';
+import {
+  createGame,
+  addPlayerToGame,
+  createRound,
+  endRound,
+} from '../db/index.js';
+import { query } from '../db/database.js';
 
 const rooms = new Map();
 // Testing room:
@@ -76,7 +83,7 @@ function setSocket (socket, io)
   // Add user
   room.users.push(user);
   room.readyState[user.id] = false; // All players start as 'not ready' after joining room
-  socketIdMap.set[user.id] = socket.id; // Map a new user to their socket id
+  socketIdMap.set(user.id, socket.id); // Map a new user to their socket id
 
   // Broadcast state whenever a new player joins
   emitRoomState(io, roomId);
@@ -128,9 +135,29 @@ function handleUnready (io, roomId, userId) {
   emitRoomState(io, roomId);
 }
 
-function handleLeave (io, roomId, userId) {
+async function handleLeave (io, roomId, userId) {
   console.log(`User ${userId} leaving room ${roomId}`);
   const room = rooms.get(roomId);
+  const game = room.gameState;
+
+  // If a game is in progress, mark it as 'abandoned' in db 
+  if (!!game) {
+    const gameId = room.gameState.dbGameId;
+    try {
+      await query(
+        `UPDATE game SET status = 'abandoned' WHERE gameid = $1`, 
+        [gameId],
+      );
+    } catch (err) {
+      console.error('Error marking game abandoned', err);
+    }
+
+    // notify remaining clients
+    io.to(roomId).emit('playerdisconnected', { 
+      userId,
+      roomId,
+    });
+  }
 
   // remove user from room
   room.users = rooms.get(roomId).users.filter(u => u.id !== userId);
@@ -393,15 +420,25 @@ function trickend(io, roomId)
     setTimeout(_ => fakeplay(io, roomId), 1000);
 }
 
-function roundend(io, roomId)
+async function roundend(io, roomId)
 {
-
   const room = rooms.get(roomId);
   const game = room.gameState;
-
+  const users = room.users;
   const threshold = 20;
 
   resolveShootTheMoon(roomId, threshold);
+
+  // create round row for the round that just ended
+  const roundRow = await createRound(game.dbGameId, game.roundNumber);
+  const roundId = roundRow.roundid;
+
+  // send per-player scores for this round and then reset
+  for (const u of users) {
+    const roundScore = game.roundPoints[u.id];
+    await endRound(roundId, u.id, roundScore);
+    game.roundPoints[u.id] = 0;
+  }
 
   emitRoomState(io, roomId);
 
@@ -452,38 +489,36 @@ async function gameend(io, roomId)
 {
   const room = rooms.get(roomId);
   const game = room.gameState;
-  const users = room.users;
+  const gameId = game.dbGameId;
 
   try {
-    const gameRow = await createGame();
-    const gameId = gameRow.game_id;
-
-    for (const [seat, u] of users.entries()) {
-      await addPlayerToGame(gameId, u.dbId, seat);
-    }
-
-    const roundRow = await createRound(gameId, game.roundNumber);
-    const roundId = roundRow.round_id;
-
-    for (const u of users) {
-      const score = game.points[u.id];
-      await endRound(roundId, u.dbId, score);
-    }
+    // Mark game as done
+    await query(
+      `UPDATE game SET status = 'done' WHERE gameid = $1`,
+      [gameId],
+    );
   } catch (err) {
-    console.error("Error sending game result to db");
+    console.error("Error sending game result to db", err);
   }
 }
 
 // GAME BUILDERS: 
 
 // Creates the game state object
-function initGameState (io, roomId) {
+async function initGameState (io, roomId) {
   const room = rooms.get(roomId);
-  let deck = shuffleDeck(buildDeck());
+
+  // Create DB game once at game start (Game already marked as 'in-progress')
+  const gameRow = await createGame();
+  const gameId = gameRow.gameid;
+
+  // Map players to this game
+  for (const [seat, user] of room.users.entries()){
+    await addPlayerToGame(gameId, user.id, seat);
+  }
 
   room.gameState = {
     hands: {},        // userId -> Cards[] (13 cards for each player)
-
     passing: true,
     passes: {},      // userId -> Cards[] (3 cards each player wants to pass to a different player)
     passDirection: getPassDirection(1),
@@ -495,7 +530,11 @@ function initGameState (io, roomId) {
     points: {},
     roundNumber: 1,
     directionMap: room.users.map(user => user.id),
+
+    dbGameId: gameId,
   };
+
+  let deck = shuffleDeck(buildDeck());
 
   // for each user
   for (const [ i, user ] of room.users.entries()) {

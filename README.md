@@ -61,6 +61,7 @@ Server -> Client commands:
 - 'start': start game (all 4 players ready). From this point on, room state should include game state.
 - 'nojoin': client cannot join room
 - 'disconnect': server closes connection
+- 'playerdisconnected': player leaves midgame '{ userId, roomId }'
 
 **Game**
 Game state: 
@@ -75,6 +76,7 @@ Game state:
 - roundPoints: id: int (temporary accumulator that tracks points for the current round)
 - points: id: int (persistent running total across all rounds; committed to db at gameend)
 - roundNumber: room's round number
+- dbGameId: gameId in db
 
 Notes on card encoding:
 - suit: 'S' or 'C' or 'D' or 'H'
