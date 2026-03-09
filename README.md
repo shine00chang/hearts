@@ -1,5 +1,51 @@
 # Hearts
 
+A web application to play the card game **Hearts**. 
+
+Tech stack: SvelteKit frontend, Node.js backend, PostgreSQL database.
+
+## Setup Instructions
+First, set up Node.js, npm, and [Postgres](#specific-postgres-instructions). Then, run the following commands to install dependencies.
+```
+git clone https://github.com/shine00chang/hearts.git
+(cd frontend && npm i)
+(cd backend && npm i)
+```
+To start the frontend:
+```
+npm run dev  # in ./frontend
+```
+To start the backend:
+```
+npm start  # in ./backend
+```
+
+## Specific Postgres Instructions
+If you already have Postgres set up on your computer, you don't need to follow these instructions.
+
+### Windows:
+1. Download the PostgreSQL installer from [here](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) and run it. 
+2. Set up pgAdmin 4. 
+3. Now, construct the URL depending on the info you used to set it up: e.g. mine is `postgres://postgres:<PASSWORD>@localhost:5433/hearts`. 
+4. Place this URL in backend/.env: `DATABASE_URL=postgres://...` 
+
+### Linux (untested):
+
+1. Install postgres from your package manager:
+```
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+2. Start the service if applicable
+```
+sudo systemctl start postgresql.service
+sudo systemctl enable postgresql.service
+sudo systemctl status postgresql.service
+```
+3. Set up the database with the `psql` CLI
+
+# Internals
+
 ## Frontend Skeleton
 *Login*
 - user field
