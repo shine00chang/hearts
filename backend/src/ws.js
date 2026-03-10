@@ -5,8 +5,8 @@ import {
   addPlayerToGame,
   createRound,
   endRound,
-} from '../db/index.js';
-import { query } from '../db/database.js';
+} from './db/index.js';
+import { query } from './db/database.js';
 
 const rooms = new Map();
 // Testing room:
