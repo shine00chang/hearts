@@ -7,9 +7,7 @@ export const load: LayoutLoad = async ({ url }) => {
   if (url.pathname === '/login')
     return;
 
-  return { user: { username: 'turtle', id: 'turtles' } }
-
-  const res = await fetch(API_ADDR + '/user')
+  const res = await fetch(API_ADDR + '/user', { credentials: "include" });
   if (res.status !== 200) {
      return redirect(303, '/login');
   }

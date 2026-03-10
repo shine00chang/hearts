@@ -3,6 +3,7 @@
 	import Navbar from '$lib/Navbar.svelte';
 
 	let { user }: PageProps = $props();
+    console.log(user);
 
 	let roomJoinModal;
 	let roomCreateModal;
