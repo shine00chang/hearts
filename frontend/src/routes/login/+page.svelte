@@ -81,7 +81,7 @@
     class="input-bordered input w-full max-w-xs"
   />
   <div>
-    <button onclick={login} class="btn btn-primary">Log In</button>
-    <button onclick={signup} class="btn btn-secondary">Sign Up</button>
+    <button onclick={login} class="btn btn">Log In</button>
+    <button onclick={signup} class="btn btn">Sign Up</button>
   </div>
 </div>

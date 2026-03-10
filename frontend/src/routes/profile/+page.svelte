@@ -74,7 +74,7 @@
 
 <Navbar {user} />
 {#if stats}
-  <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+  <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3 px-12">
     <div
       class="flex flex-col justify-center rounded-lg border border-gray-100 bg-white p-6 shadow-md"
     >
@@ -133,7 +133,7 @@
   </div>
 {:else}
   <div
-    class="mb-8 flex flex-col items-center justify-center rounded-lg border border-gray-100 bg-white p-8 text-center shadow-md"
+    class="my-8 mx-6 flex flex-col items-center justify-center rounded-lg border border-gray-100 bg-white p-8 text-center shadow-md"
   >
     <h3 class="text-lg font-semibold text-gray-600">No Stats Available</h3>
     <p class="mt-1 text-sm text-gray-400">

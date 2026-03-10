@@ -17,7 +17,7 @@
       class="inline-block inline-flex cursor-pointer items-center px-4 py-2 text-2xl font-bold"
       onclick={() => (logoutOpen = !logoutOpen)}
     >
-      Logged in as<span class="text-primary">&nbsp;{user.username}</span>
+      <span class="text-primary">&nbsp;{user.username}</span>
     </button>
     {#if logoutOpen}
       <div class="absolute top-14 right-4 w-48 rounded-md bg-base-200 shadow-lg">

@@ -20,9 +20,11 @@
 </script>
 
 <Navbar {user} />
-<input type="text" placeholder="Search Username" class="input" bind:value={username} />
 
-<button class="btn" onclick={getGames}>Search</button>
+<div class='m-6'>
+  <input type="text" placeholder="Search Username" class="input" bind:value={username} />
+  <button class="btn" onclick={getGames}>Search</button>
+</div>
 
 {#if res === ''}{:else if res === null || res.length === 0}
   <div
@@ -31,7 +33,7 @@
     <p class="text-center font-medium">User either doesn't exist or hasn't played any games.</p>
   </div>
 {:else}
-  <div class="mt-6 overflow-x-auto shadow-md sm:rounded-lg">
+  <div class="mt-6 overflow-x-auto shadow-md sm:rounded-lg px-12">
     <table class="w-full text-left text-sm text-gray-500">
       <thead class="bg-gray-100 text-xs text-gray-700 uppercase">
         <tr>

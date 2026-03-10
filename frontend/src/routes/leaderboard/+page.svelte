@@ -10,7 +10,7 @@
 </script>
 
 <Navbar user={me} />
-<ul class="list rounded-box bg-base-100 shadow-md">
+<ul class="list rounded-box bg-base-100 shadow-md mx-6 mt-6">
   <li class="p-4 pb-2 text-xs tracking-wide opacity-60">Leaderboard</li>
   {#each data.leaderboard as user, i}
     <li class="list-row">
