@@ -58,6 +58,7 @@
       alert(data);
       return;
     }
+    login();
   };
 </script>
 

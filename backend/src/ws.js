@@ -44,9 +44,20 @@ async function setSocket (socket, io)
 
   const user = await wsauth(session);
   if (!user) {
-    console.log('invalid WS session', session);
+    console.log('user not logged in');
+    socket.emit('error', { message: 'user is not logged in' });
     socket.disconnect();
     return;
+  }
+
+  // prevent one user in multiple, or the same room.
+  for (const [_, room] of rooms) {
+    console.log(room);
+    if (room.users.some(u => u.id == user.id)) {
+      socket.emit('error', { message: `user is currently in room: ${room.id}` });
+      socket.disconnect();
+      return;
+    }
   }
 
   if (typeof roomId == 'string' && roomId.length == 4) {
@@ -68,7 +79,7 @@ async function setSocket (socket, io)
   // 4 player limit check
   if (rooms.has(roomId) && rooms.get(roomId).users.length >= 4) {
     console.log('room full, rejecting user');
-    socket.emit('nojoin', { message: 'Room is full' });
+    socket.emit('error', { message: 'Room is full' });
     socket.disconnect();
     return;
   }

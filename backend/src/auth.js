@@ -87,7 +87,9 @@ export async function logout (req, res) {
 export async function wsauth (sessionId) {
   const session = await db.getSession(sessionId)
   if (session) {
-    return await db.getUser(session.user_id, false);
+    const user = await db.getUser(session.user_id, false);
+    delete user.password_hash;
+    return user;
   }
 
   return null;

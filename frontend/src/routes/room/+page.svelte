@@ -19,7 +19,8 @@
   let roomState = $state();
 
   // display elements
-  let noJoinModal;
+  let errorModal;
+  let errorMsg = $state();
 
   let renderGameState; // bound function from game element
   let selfId;
@@ -40,16 +41,20 @@
     if (code) console.log(`code is ${code}, joining room...`);
     else console.log(`no code provided, creating room...`);
 
+    const session = document.cookie.split('; ').find(row => row.startsWith('sessionid=')).split("=")[1];
     socket = io(window.location.hostname + ':' + WSPORT, {
       auth: {
-        session: 'superadmin'
+        session
       },
       query: {
         roomId: code
       }
     });
 
-    socket.on('nojoin', (_) => noJoinModal.showModal());
+    socket.on('error', ({ message }) => {
+      errorModal.showModal();
+      errorMsg = message;
+    });
     socket.on('state', onState);
   });
 
@@ -70,10 +75,10 @@
 </script>
 
 <!-- failed join dialog -->
-<dialog bind:this={noJoinModal} class="modal">
+<dialog bind:this={errorModal} class="modal">
   <div class="modal-box">
     <h3 class="font-bold">Could Not Join Room</h3>
-    <div>the room might not exist, or the room is full</div>
+    <div>{errorMsg}</div>
     <div class="modal-action">
       <form method="dialog">
         <a href="/" class="btn btn-sm">Back</a>
