@@ -25,7 +25,10 @@ const PORT = 3000;
 
 // Adds headers: Access-Control-Allow-Origin: *
 // Necessary because client is served by a different origin
-app.use(cors())
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true
+}))
 
 app.use('/user', userRouter);
 app.use('/game', gameRouter);

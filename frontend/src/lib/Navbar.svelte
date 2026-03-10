@@ -7,6 +7,8 @@
 <nav class="flex w-full bg-base-200">
   <a href="/" class="px-4 py-3 text-2xl font-bold">❤️❤️❤️</a>
   <div class="flex flex-grow"></div>
+  <a href="/search" class="px-4 py-2 text-2xl font-bold">Search</a>
+  <a href="/profile" class="px-4 py-2 text-2xl font-bold">Profile</a>
   {#if userState.loggedIn}
     <button 
        class="px-4 py-2 text-2xl font-bold cursor-pointer" 

@@ -1,4 +1,6 @@
 <script lang="ts">
+
+import Navbar from "$lib/Navbar.svelte";
 import { API_ADDR } from '$lib/configs.ts';
 let username = $state("");
 let res = $state<any>(null);
@@ -12,6 +14,7 @@ async function getGames() {
 }
 </script>
 
+<Navbar/>
 <input type="text" placeholder="Search Username" class="input" bind:value={username}/>
 
 <button class="btn" onclick={getGames}>Search</button>

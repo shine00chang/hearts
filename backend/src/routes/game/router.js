@@ -9,10 +9,20 @@ async function getGames(req, res) {
   return (res.json(await db.getUserGames(username)) || null);
 };
 
+async function getOwnGames(req, res) {
+  const username = req.user.username;
+  const games = (await db.getUserGames(username) || null);
+  return res.json({
+    username: username,
+    games: games
+  });
+}
+
 router.get('/', (req, res) => {
-    res.send('hello! from game')
+  res.send('hello! from game')
 });
 
 router.get('/search', getGames)
+router.get('/own', auth, getOwnGames)
 
 export default router;
