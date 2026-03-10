@@ -138,6 +138,10 @@ function handleUnready (io, roomId, userId) {
 async function handleLeave (io, roomId, userId) {
   console.log(`User ${userId} leaving room ${roomId}`);
   const room = rooms.get(roomId);
+  // Can happen if one client sends a request from outdated state
+  if (!room) {
+    return;
+  }
   const game = room.gameState;
 
   // If a game is in progress, mark it as 'abandoned' in db 
