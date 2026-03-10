@@ -2,6 +2,7 @@
   import Navbar from '$lib/Navbar.svelte';
   import { API_ADDR } from '$lib/configs.ts';
   import { getUser } from '$lib/state.svelte.ts';
+  import { onMount } from 'svelte';
 
   let user;
   onMount((_) => (user = getUser()));
