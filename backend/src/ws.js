@@ -30,19 +30,24 @@ export default function setWS (server) {
   const io = new Server(server, {
     cors: {
       origin: ["http://localhost:5173"],
+      credentials: true,
     }
   });
 
   io.on('connection', socket => setSocket(socket, io));
 }
 
-function setSocket (socket, io) 
+async function setSocket (socket, io) 
 {
   const { session } = socket.handshake.auth;
   let { roomId } = socket.handshake.query;
 
-  //const user = wsauth(session);
-  const user = { username: 'turtles', id: 'turtles' };
+  const user = await wsauth(session);
+  if (!user) {
+    console.log('invalid WS session', session);
+    socket.disconnect();
+    return;
+  }
 
   if (typeof roomId == 'string' && roomId.length == 4) {
     console.log(`user connected requesting roomId: ${roomId}, with session token: ${session}`);
@@ -164,8 +169,7 @@ async function handleLeave (io, roomId, userId) {
   }
 
   // remove user from room
-  if (!rooms.get(roomID)) return;
-  room.users = rooms.get(roomId).users.filter(u => u.id !== userId);
+  room.users = room.users.filter(u => u.id !== userId);
   delete room.readyState[userId];
 
   // if room is empty, delete it
