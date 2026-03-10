@@ -128,12 +128,12 @@ export const createGame = async () => {
   }
 };
 
-export const addPlayerToGame = async (game_id, user_id, seat) => {
+export const addPlayerToGame = async (game_id, username, seat) => {
   try {
     await db.query(`
        INSERT INTO game_users (game_id, player_id, seat)
-       VALUES ($1, $2, $3)`,
-      [game_id, user_id, seat]
+       VALUES ($1, (SELECT id FROM users WHERE username = $2), $3)`,
+      [game_id, username, seat]
     );
   } catch (err) {
     console.error(err.message)
@@ -150,12 +150,16 @@ export const createRound = async (game_id, round_number) => {
   return res.rows[0];
 };
 
-export const endRound = async (round_id, user_id, score) => {
-  await db.query(`
-     INSERT INTO round_result (round_id, user_id, score)
-     VALUES ($1, $2, $3)`,
-    [round_id, user_id, score]
-  );
+export const endRound = async (round_id, username, score) => {
+  try {
+    await db.query(`
+       INSERT INTO round_result (round_id, user_id, score)
+       VALUES ($1, (SELECT id FROM users WHERE username = $2), $3)`,
+      [round_id, username, score]
+    );
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 export const createSession = async (session_id, user_id) => {
