@@ -164,6 +164,7 @@ async function handleLeave (io, roomId, userId) {
   }
 
   // remove user from room
+  if (!rooms.get(roomID)) return;
   room.users = rooms.get(roomId).users.filter(u => u.id !== userId);
   delete room.readyState[userId];
 

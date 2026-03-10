@@ -161,7 +161,7 @@
   }
 </style>
 
-<div class='h-screen w-screen bg-slate-100'>
+<div class='h-screen w-screen bg-base-100'>
   <h1> big games </h1>
 
   <!-- center box -->
