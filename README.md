@@ -21,7 +21,11 @@ npm start  # in ./backend
 ```
 
 ## Specific Postgres Instructions
-If you already have Postgres set up on your computer, you don't need to follow these instructions.
+If this repository came from a compressed tarball on Gradescope, /backend/.env should already be populated with a database url to a Neon database.
+As such, the following instructions can be safely ignored if /backend/.env is already populated.
+
+Alternatively, if you already have Postgres set up on your computer, you don't need to follow these instructions to set up Postgres.
+You will, however, need to create a database and provide the url to it in /backend/.env in the form: `DATABASE_URL=postgres://...` 
 
 ### Windows:
 1. Download the PostgreSQL installer from [here](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) and run it. 
@@ -43,6 +47,16 @@ sudo systemctl enable postgresql.service
 sudo systemctl status postgresql.service
 ```
 3. Set up the database with the `psql` CLI
+
+## Testing
+If /backend/.env is already populated with a URL, then the following users are already created and have game data available:
+- username: "mochbot", password: "test"
+- username: "caboozled_pie", password: "test"
+- username: "zzztoj", password: "test"
+- username: "coldclear", password: "test"
+
+If one wants to look at /profile, they are encouraged to start with one of these test users to view game data. 
+If one wants to search for the past games of specific users, these users have all participated in at least one game beforehand.
 
 # Internals
 
