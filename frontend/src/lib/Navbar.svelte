@@ -11,6 +11,7 @@
   <div class="flex flex-grow"></div>
   <a href="/search" class="inline-flex items-center px-4 py-2 text-2xl font-bold">Search</a>
   <a href="/profile" class="inline-flex items-center px-4 py-2 text-2xl font-bold">Profile</a>
+  <a href="/leaderboard" class="inline-flex items-center px-4 py-2 text-2xl font-bold">Leaderboard</a>
   {#if user}
     <button
       class="inline-block inline-flex cursor-pointer items-center px-4 py-2 text-2xl font-bold"
