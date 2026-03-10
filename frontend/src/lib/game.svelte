@@ -1,4 +1,4 @@
-<script lang='ts>
+<script lang='ts'>
   import { goto } from '$app/navigation';
 
   import Card from '$lib/card.svelte';

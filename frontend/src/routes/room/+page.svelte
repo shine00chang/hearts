@@ -1,4 +1,4 @@
-<script lang='ts>
+<script lang='ts'>
   import { WSPORT } from '$lib/configs.ts';
   import { onMount } from 'svelte';
 

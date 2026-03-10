@@ -1,4 +1,4 @@
-<script lang='ts>
+<script lang='ts'>
   import Profile from '$lib/svgs/Profile.svelte';
   const { points, round, name, top, left } = $props();
 </script>

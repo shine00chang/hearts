@@ -1,4 +1,4 @@
-<script lang='ts>
+<script lang='ts'>
   import '$lib/card-back.css';
   import { CARDH } from '$lib/configs.ts';
   const { num, top, left } = $props();

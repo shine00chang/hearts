@@ -1,4 +1,4 @@
-<script lang='ts>
+<script lang='ts'>
   let { passing, pass, broken, turn } = $props();
   let passturn = $derived.by(_ => {
     if (pass == 'left') return 1;

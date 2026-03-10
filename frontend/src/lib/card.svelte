@@ -1,4 +1,4 @@
-<script lang='ts>
+<script lang='ts'>
   import { CARD } from '$lib/configs.ts';
   let { value, height } = $props();
   let symbol = $derived.by(_ => {
