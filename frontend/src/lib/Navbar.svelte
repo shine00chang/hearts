@@ -1,5 +1,6 @@
 <script lang="ts">
   import { userState } from '../state.svelte';
+	import { API_ADDR } from './configs';
 
   let logoutOpen = false;
 </script>
@@ -21,9 +22,12 @@
         <button 
           class="block w-full text-left px-4 py-2 text-sm text-error hover:bg-base-300" 
                  onclick={() => {
-          userState.loggedIn = false;
-          userState.name = null;
-          logoutOpen = false;
+                  fetch(API_ADDR + '/game/own', {
+                    credentials: 'include',
+                  });
+                  userState.loggedIn = false;
+                  userState.name = null;
+                  logoutOpen = false;
           }}
           >
           Logout
