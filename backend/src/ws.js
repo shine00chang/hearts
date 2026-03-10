@@ -18,9 +18,9 @@ rooms.set("TEST", {
         { id: 'cow', username: 'Cow' }
     ],
     readyState: {
-        alice: true,
-        bessie: true,
-        cow: true,
+        'alice': true,
+        'bessie': true,
+        'cow': true,
     }
 });
 
@@ -107,7 +107,7 @@ function emitRoomState (io, roomId) {
   io.to(roomId).emit('state', rooms.get(roomId));
 }
 
-function handleReady (io, roomId, userId) {
+async function handleReady (io, roomId, userId) {
   console.log('received ready');
 
   const room = rooms.get(roomId);
@@ -123,7 +123,7 @@ function handleReady (io, roomId, userId) {
       .reduce((all, ready) => all && ready, true)) {
 
     console.log(`Start a game in room ${roomId}`);
-    initGameState(io, roomId);
+    await initGameState(io, roomId);
     emitRoomState(io, roomId);
   }
 }
@@ -149,7 +149,7 @@ async function handleLeave (io, roomId, userId) {
     const gameId = room.gameState.dbGameId;
     try {
       await query(
-        `UPDATE game SET status = 'abandoned' WHERE gameid = $1`, 
+        `UPDATE game SET status = 'abandoned' WHERE game_id = $1`, 
         [gameId],
       );
     } catch (err) {
@@ -206,6 +206,8 @@ function fakeplay(io, roomId)
   let card = undefined;
   if (game.leader != game.turn)
     card = game.hands[game.turn].find(card => game.trick[game.leader].charAt(0) == card.charAt(0));
+  else
+    card = game.hands[game.turn].find(card => card === "C2")
   if (card === undefined) {
     if (!game.heartsBroken)
       card = game.hands[game.turn].find(card => card.charAt(0) != 'H');
@@ -292,7 +294,8 @@ function handlePlay (io, roomId, userId, card)
   const leader = game.leader;
 
   // If its the first round, the leader must play C2
-  if (game.roundNumber === 1 && userId === leader && card !== "C2") {
+  console.log(game.roundNumber)
+  if (game.hands[userId].length === 13 && userId === leader && card !== "C2") {
     io.to(socketIdMap.get(userId)).emit('illegalmove');
     return;
   }
@@ -418,6 +421,7 @@ function trickend(io, roomId)
   // calculates if all hands empty
   if (Object.entries(game.hands).reduce((a, [k, v]) => a + v.length, 0) == 0) {
     roundend(io, roomId);
+    return;
   }
 
   if (game.turn != 'turtles')
@@ -431,18 +435,20 @@ async function roundend(io, roomId)
   const users = room.users;
   const threshold = 20;
 
-  resolveShootTheMoon(roomId, threshold);
-
   // create round row for the round that just ended
   const roundRow = await createRound(game.dbGameId, game.roundNumber);
-  const roundId = roundRow.roundid;
+  const roundId = roundRow.round_id;
 
   // send per-player scores for this round and then reset
   for (const u of users) {
     const roundScore = game.roundPoints[u.id];
-    await endRound(roundId, u.id, roundScore);
+    await endRound(roundId, u.username, roundScore);
     game.roundPoints[u.id] = 0;
   }
+
+  resolvePoints(roomId, threshold);
+  
+  // send per-player scores for this round and then reset
 
   emitRoomState(io, roomId);
 
@@ -498,7 +504,7 @@ async function gameend(io, roomId)
   try {
     // Mark game as done
     await query(
-      `UPDATE game SET status = 'done' WHERE gameid = $1`,
+      `UPDATE game SET status = 'done' WHERE game_id = $1`,
       [gameId],
     );
   } catch (err) {
@@ -514,11 +520,11 @@ async function initGameState (io, roomId) {
 
   // Create DB game once at game start (Game already marked as 'in-progress')
   const gameRow = await createGame();
-  const gameId = gameRow.gameid;
+  const gameId = gameRow.game_id;
 
   // Map players to this game
   for (const [seat, user] of room.users.entries()){
-    await addPlayerToGame(gameId, user.id, seat);
+    await addPlayerToGame(gameId, user.username, seat);
   }
 
   room.gameState = {
@@ -592,7 +598,7 @@ function getPassDirection (roundNumber) {
   return 'hold';
 }
 
-function resolveShootTheMoon (roomId, threshold) {
+function resolvePoints (roomId, threshold) {
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
