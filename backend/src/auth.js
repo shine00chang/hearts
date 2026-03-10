@@ -52,14 +52,14 @@ export async function login (req, res) {
   const password = req.body.password
 
   if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
-    return res.send('please provide a username/password');
+    return res.status(400).send('please provide a username/password');
   }
   const user = await db.getUser(username)
   if (!user) {
-    return res.send('user does not exist, try registering first');
+    return res.status(404).send('user does not exist, try registering first');
   }
   if (!(await passwordCheck(password, user.password_hash))) {
-    return res.send('invalid password');
+    return res.status(401).send('invalid password');
   }
   const sessionId = crypto.randomUUID();
   await db.createSessionTable()
