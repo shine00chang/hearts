@@ -2,6 +2,9 @@
 import { API_ADDR } from '$lib/configs.ts';
 import { onMount } from "svelte"
 import Navbar from "$lib/Navbar.svelte";
+import { getUser } from '$lib/state.svelte.ts';
+let user;
+onMount(_ => user = getUser());
 
 let username = $state("");
 let res = $state<any>(null);
@@ -68,7 +71,7 @@ let stats = $derived.by(() => {
 
 </script>
 
-<Navbar/>
+<Navbar {user}/>
 {#if stats}
   <div class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
     

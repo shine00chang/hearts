@@ -13,7 +13,9 @@ export async function passwordCheck(password, hashed_password) {
 
 export default async function auth (req, res, next) {
   let authed = false;
+  console.log(req.cookies);
   if (typeof req.cookies.sessionid === 'string') {
+    console.log(req.cookies);
     db.deleteOldSessions()
     const session = await db.getSession(req.cookies.sessionid)
     if (session) {
@@ -23,8 +25,11 @@ export default async function auth (req, res, next) {
     }
   }
 
-  if (!authed)
-  return res.status(403).send("unauthorized");
+  if (!authed) {
+    res.clearCookie('sessionid')
+    console.log('auth said they are unauthorized')
+    return res.status(403).send("unauthorized");
+  }
 
   next();
 }

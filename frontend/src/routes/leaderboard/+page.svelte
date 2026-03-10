@@ -2,10 +2,14 @@
   import Navbar from "$lib/Navbar.svelte";
   import type { PageProps } from './$types';
   import { onMount } from 'svelte'
-  let { data }: PageProps = $props();
-</script>
+  import { getUser } from '$lib/state.svelte.ts';
+  let me;
+  onMount(_ => me = getUser());
 
-<Navbar />
+  let { data }: PageProps = $props();
+  </script>
+
+<Navbar user={me}/>
 <ul class="list bg-base-100 rounded-box shadow-md">
   <li class="p-4 pb-2 text-xs opacity-60 tracking-wide">Leaderboard</li>
   {#each data.leaderboard as user, i}

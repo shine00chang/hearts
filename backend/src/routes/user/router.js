@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/', auth, (req, res) => {
   console.log(req.user);
-  return res.json(req.user);
+  return res.status(200).json(req.user);
 });
 
 router.post('/create', register)

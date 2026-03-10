@@ -1,9 +1,12 @@
 <script lang='ts'>
 	import { goto } from "$app/navigation";
-	import { userState } from "../../state.svelte";
-    import Navbar from "$lib/Navbar.svelte";
-    import { API_ADDR } from "$lib/configs";
-    
+import Navbar from "$lib/Navbar.svelte";
+  import { API_ADDR } from "$lib/configs";
+  import {onMount} from 'svelte';
+  import { getUser } from '$lib/state.svelte.ts';
+  let user;
+  onMount(_ => user = getUser());
+
     const post = async (route: string, body: any) => {
         const res = await fetch(API_ADDR + route, {
             method: "POST",
@@ -39,9 +42,6 @@
             alert(data);
             return;
         }
-        
-        userState.loggedIn = true;
-        userState.name = username;
         goto('/');
 	};
 
@@ -62,7 +62,7 @@
 	};
 </script>
 
-<Navbar />
+<Navbar {user}/>
 <div class="w-full flex items-center flex-col py-8 px-8 gap-4">
 	<h1 class="text-2xl font-bold">Login</h1>
 

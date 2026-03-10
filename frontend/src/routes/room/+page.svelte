@@ -7,10 +7,13 @@
   import Profile from '$lib/svgs/Profile.svelte';
   import Game from '$lib/game.svelte';
 
-  let socket;
+  import { getUser } from '$lib/state.svelte.ts';
 
-  const { data } = $props();
-  const { user: me } = data;
+  let me;
+  onMount(_ => me = getUser());
+
+
+  let socket;
 
   // display relevant states
   let gameStart = $state(false);

@@ -1,16 +1,18 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import Navbar from '$lib/Navbar.svelte';
+    import { getUser } from '$lib/state.svelte.ts';
+    import { onMount } from 'svelte';
 
-	let { user }: PageProps = $props();
-    console.log(user);
+    onMount(_ => user = getUser());
 
+    let user;
 	let roomJoinModal;
 	let roomCreateModal;
 	let roomCodeInput = '';
 </script>
 
-<Navbar />
+<Navbar {user}/>
 <main class="px-48 pt-12">
 	<!-- room join dialog -->
 	<dialog bind:this={roomJoinModal} class="modal">
@@ -33,12 +35,10 @@
 	<dialog bind:this={roomCreateModal} class="modal">
 		<div class="modal-box">
 			<h3 class="font-bold">Create Room</h3>
-			<div class="text-xs">Configurations:</div>
+			<div class="text-xs">Configuration: 20-point games</div>
 			<div class="modal-action">
 				<form method="dialog">
-					<button on:click={(_) => (window.location.href = `/room`)} class="btn btn-sm"
-						>Create</button
-					>
+					<button on:click={(_) => (window.location.href = `/room`)} class="btn btn-sm">Create</button>
 					<button class="btn btn-sm">Back</button>
 				</form>
 			</div>

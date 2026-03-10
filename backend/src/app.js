@@ -7,7 +7,6 @@ import * as db from './db/index.js'
 
 import userRouter from './routes/user/router.js';
 import gameRouter from './routes/game/router.js';
-import roomRouter from './routes/room/router.js';
 import boardRouter from './routes/board/router.js';
 
 import setWS from './ws.js';
@@ -32,7 +31,6 @@ app.use(cors({
 
 app.use('/user', userRouter);
 app.use('/game', gameRouter);
-app.use('/room', roomRouter);
 app.use('/board', boardRouter);
 
 app.get('/', (res, req) => {
