@@ -1,4 +1,4 @@
-<script>
+<script lang='ts>
 	let { showModal = $bindable(), header, children, onclose } = $props();
 
 	let dialog = $state(); // HTMLDialogElement

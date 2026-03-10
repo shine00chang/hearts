@@ -1,4 +1,4 @@
-<script>
+<script lang='ts>
   import Card from '$lib/card.svelte';
 
   let { left, right, up, down } = $props();
