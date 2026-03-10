@@ -34,17 +34,17 @@ export async function register (req, res) {
   const password = req.body.password
 
   if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
-    return res.send('please provide a username/password');
+    return res.status(400).send('please provide a username/password');
   }
 
   if (await db.getUser(username)) {
-    return res.send('username already exists, use a different one')
+    return res.status(400).send('username already exists, use a different one')
   }
 
   if (!await db.createUser(username, await hashPassword(password))) {
-    return res.send("registration failed")
+    return res.status(400).send("registration failed")
   }
-  res.send("registration successful")
+  res.status(200).send("registration successful")
 }
 
 export async function login (req, res) {
@@ -76,7 +76,7 @@ export async function logout (req, res) {
     console.error("logout from authed user, but has no session id in cookie?")
   }
   res.clearCookie('sessionid')
-  res.send("logout success")
+  res.status(200).send("logout success")
 }
 
 export async function wsauth (sessionId) {

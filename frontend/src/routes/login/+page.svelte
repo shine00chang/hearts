@@ -59,8 +59,6 @@
             alert(data);
             return;
         }
-
-        await login();
 	};
 </script>
 
