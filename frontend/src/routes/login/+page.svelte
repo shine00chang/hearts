@@ -10,6 +10,7 @@
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "include",
             body: JSON.stringify(body),
         });
         let data = {};
@@ -60,10 +61,7 @@
             return;
         }
 
-        // logs you in as well
-        userState.loggedIn = true;
-        userState.name = username;
-        goto('/');
+        await login();
 	};
 </script>
 
