@@ -77,11 +77,11 @@
 <!-- failed join dialog -->
 <dialog bind:this={errorModal} class="modal">
   <div class="modal-box">
-    <h3 class="font-bold">Could Not Join Room</h3>
+    <h3 class="font-bold">Error</h3>
     <div>{errorMsg}</div>
     <div class="modal-action">
       <form method="dialog">
-        <a href="/" class="btn btn-sm">Back</a>
+        <button on:click={_=>{window.href='/';location.reload()}} class="btn btn-sm">Back</button>
       </form>
     </div>
   </div>

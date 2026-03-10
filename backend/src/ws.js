@@ -44,7 +44,6 @@ async function setSocket (socket, io)
 
   const user = await wsauth(session);
   if (!user) {
-    console.log('user not logged in');
     socket.emit('error', { message: 'user is not logged in' });
     socket.disconnect();
     return;
@@ -52,7 +51,6 @@ async function setSocket (socket, io)
 
   // prevent one user in multiple, or the same room.
   for (const [_, room] of rooms) {
-    console.log(room);
     if (room.users.some(u => u.id == user.id)) {
       socket.emit('error', { message: `user is currently in room: ${room.id}` });
       socket.disconnect();
@@ -107,11 +105,7 @@ async function setSocket (socket, io)
   // ready, unready, leave, and disconnect event handling 
   socket.on('ready', () => handleReady(io, roomId, user.id));
   socket.on('unready', () => handleUnready(io, roomId, user.id));
-  socket.on('leave', () => handleLeave(io, roomId, user.id));
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
-    handleLeave(io, roomId, user.id);
-  });
+  socket.on('disconnect', () => handleLeave(io, roomId, user.id));
 
   // game event handling
   socket.on('pass', (cards) => handlePass(io, roomId, user.id, cards));
@@ -151,9 +145,12 @@ function handleUnready (io, roomId, userId) {
   emitRoomState(io, roomId);
 }
 
-async function handleLeave (io, roomId, userId) {
-  console.log(`User ${userId} leaving room ${roomId}`);
+async function handleLeave (io, roomId, userId) 
+{
+  console.log(`User ${userId} left room ${roomId}`);
+
   const room = rooms.get(roomId);
+
   // Can happen if one client sends a request from outdated state
   if (!room) {
     return;
@@ -173,10 +170,11 @@ async function handleLeave (io, roomId, userId) {
     }
 
     // notify remaining clients
-    io.to(roomId).emit('playerdisconnected', { 
-      userId,
-      roomId,
-    });
+    const user = room.users.find(u => u.id = userId);
+    io.to(roomId).emit(
+      'error', 
+      { message: `player ${user.username} disconnected. game cannot be restarted.` }
+    );
   }
 
   // remove user from room
