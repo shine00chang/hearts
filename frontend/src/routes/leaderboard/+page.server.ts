@@ -3,7 +3,7 @@ import { API_ADDR } from '$lib/configs.ts';
 
 export const load: PageServerLoad = async ({ fetch }) => {
   try {
-    const res = await fetch(API_ADDR + '/board/get')
+    const res = await fetch(API_ADDR + '/board/get');
     if (!res.ok) {
       throw new Error(`Error: ${res.status}`);
     }
@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
   } catch (err) {
     console.error(err);
     return {
-      leaderboard: [] 
+      leaderboard: []
     };
   }
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { API_ADDR } from './configs';
+  import { API_ADDR } from './configs';
 
   const { user } = $props();
   console.log(user);
@@ -12,27 +12,26 @@
   <a href="/search" class="inline-flex items-center px-4 py-2 text-2xl font-bold">Search</a>
   <a href="/profile" class="inline-flex items-center px-4 py-2 text-2xl font-bold">Profile</a>
   {#if user}
-    <button 
-       class="inline-flex items-center px-4 py-2 text-2xl font-bold cursor-pointer inline-block" 
-       onclick={() => (logoutOpen = !logoutOpen)}
-       >
-       Logged in as<span class="text-primary">&nbsp;{user.username}</span>
+    <button
+      class="inline-block inline-flex cursor-pointer items-center px-4 py-2 text-2xl font-bold"
+      onclick={() => (logoutOpen = !logoutOpen)}
+    >
+      Logged in as<span class="text-primary">&nbsp;{user.username}</span>
     </button>
     {#if logoutOpen}
-      <div class="absolute right-4 top-14 w-48 bg-base-200 rounded-md shadow-lg">
-        <button 
-          class="block w-full text-left px-4 py-2 text-sm text-error hover:bg-base-300" 
-                 onclick={() => {
-                  fetch(API_ADDR + '/user/logout', {
-                    credentials: 'include',
-                    method: "POST"
-                  });
-                  logoutOpen = false;
-                
-          location.reload();
+      <div class="absolute top-14 right-4 w-48 rounded-md bg-base-200 shadow-lg">
+        <button
+          class="block w-full px-4 py-2 text-left text-sm text-error hover:bg-base-300"
+          onclick={() => {
+            fetch(API_ADDR + '/user/logout', {
+              credentials: 'include',
+              method: 'POST'
+            });
+            logoutOpen = false;
 
+            location.reload();
           }}
-          >
+        >
           Logout
         </button>
       </div>

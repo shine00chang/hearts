@@ -1,4 +1,4 @@
-<script lang='ts'>
+<script lang="ts">
   import { goto } from '$app/navigation';
 
   import Card from '$lib/card.svelte';
@@ -20,24 +20,27 @@
   // derived states
   let clickedOver = $state(false);
   let gameEnd = $derived(gameState.over || clickedOver);
-  let cards = $derived.by(_ => { // generate card graphics from the list of cards
+  let cards = $derived.by((_) => {
+    // generate card graphics from the list of cards
     console.log(gameState);
     const hand = gameState.hands[me];
 
-    const gap = (hand_width - CARD.WIDTH) / (hand.length-1);
+    const gap = (hand_width - CARD.WIDTH) / (hand.length - 1);
     const cards = hand.map((card, i) => {
       const holding = passbuffer.indexOf(card) !== -1 || playbuffer === card;
       return {
         x: gap * i,
         y: holding ? -50 : 0,
-        value: card,
+        value: card
       };
     });
     return cards;
   });
-  let rank = $derived.by(_ => {
+  let rank = $derived.by((_) => {
     const k = Object.entries(gameState.points)
-      .map(([k, v]) => { return { name: roomState.users.find(o => o.id == k).username, points: v } })
+      .map(([k, v]) => {
+        return { name: roomState.users.find((o) => o.id == k).username, points: v };
+      })
       .sort((a, b) => a.points - b.points);
     return k;
   });
@@ -49,31 +52,30 @@
 
   // TODO: need to dynamically generate this too. gotta make something for turn order
   let meInDirectionMap = $derived(gameState.directionMap.indexOf(me));
-  let userUp = $derived.by(_ => {
-    const id = gameState.directionMap[(meInDirectionMap+2)%4];
-    return roomState.users.find(o => o.id == id);
+  let userUp = $derived.by((_) => {
+    const id = gameState.directionMap[(meInDirectionMap + 2) % 4];
+    return roomState.users.find((o) => o.id == id);
   });
-  let userLeft = $derived.by(_ => {
-    const id = gameState.directionMap[(meInDirectionMap+3)%4];
-    return roomState.users.find(o => o.id == id);
+  let userLeft = $derived.by((_) => {
+    const id = gameState.directionMap[(meInDirectionMap + 3) % 4];
+    return roomState.users.find((o) => o.id == id);
   });
-  let userRight = $derived.by(_ => {
-    const id = gameState.directionMap[(meInDirectionMap+1)%4];
-    return roomState.users.find(o => o.id == id);
+  let userRight = $derived.by((_) => {
+    const id = gameState.directionMap[(meInDirectionMap + 1) % 4];
+    return roomState.users.find((o) => o.id == id);
   });
-  let userMe = roomState.users.find(o => o.id === me);
+  let userMe = roomState.users.find((o) => o.id === me);
 
-  const directionToNumber = d => {
+  const directionToNumber = (d) => {
     if (userUp.id == d) return 0;
     if (userRight.id == d) return 1;
     if (userMe.id == d) return 2;
     if (userLeft.id == d) return 3;
-  }
+  };
 
-  const cardclick = card => {
+  const cardclick = (card) => {
     // if in passing phase, toggle the pass buffer
     if (gameState.passing) {
-
       if (passbuffer.indexOf(card.value) !== -1) {
         // if in buffer already
         passbuffer.splice(passbuffer.indexOf(card.value), 1);
@@ -85,58 +87,170 @@
         card.y = -50;
       }
 
-      // if buffer has 3, add p/meass action 
-      if (passbuffer.length === 3)
-        actions.push(actionPass)
-      else
-        actions = actions.filter(action => action.text != actionPass.text);
+      // if buffer has 3, add p/meass action
+      if (passbuffer.length === 3) actions.push(actionPass);
+      else actions = actions.filter((action) => action.text != actionPass.text);
 
       return;
     }
 
     // if in playing phase, store in play buffer
     // check if its your turn
-    if (gameState.turn !== me)
-      return;
+    if (gameState.turn !== me) return;
 
     // check if suite is right
     if (gameState.leader != me) {
       const lead = gameState.trick[gameState.leader].charAt(0);
-      if (gameState.hands[me].some(card => card.charAt(0) == lead) && card.value.charAt(0) != lead)
+      if (
+        gameState.hands[me].some((card) => card.charAt(0) == lead) &&
+        card.value.charAt(0) != lead
+      )
         return;
     }
 
     // if leader, check if broken hearts
     if (gameState.leader == me)
-      if (gameState.heartsBroken == false && card.value.charAt(0) == 'H' && gameState.hands[me].some(card => card.charAt(0) != 'H'))
+      if (
+        gameState.heartsBroken == false &&
+        card.value.charAt(0) == 'H' &&
+        gameState.hands[me].some((card) => card.charAt(0) != 'H')
+      )
         return;
 
     if (!playbuffer) actions.push(actionPlay);
     if (card.value == playbuffer) {
-      actions = actions.filter(action => action.text != actionPlay.text);
+      actions = actions.filter((action) => action.text != actionPlay.text);
       playbuffer = undefined;
     } else {
       playbuffer = card.value;
     }
-  }
+  };
 
   const actionPass = {
-    text: "pass",
-    handler: _ => {
-      emit('pass', passbuffer)
+    text: 'pass',
+    handler: (_) => {
+      emit('pass', passbuffer);
       passbuffer = [];
-      actions = actions.filter(action => action.text != actionPass.text);
+      actions = actions.filter((action) => action.text != actionPass.text);
     }
-  }
+  };
   const actionPlay = {
-    text: "play",
-    handler: _ => {
+    text: 'play',
+    handler: (_) => {
       emit('play', playbuffer);
       playbuffer = undefined;
-      actions = actions.filter(action => action.text != actionPlay.text);
+      actions = actions.filter((action) => action.text != actionPlay.text);
     }
-  }
+  };
 </script>
+
+<div class="h-screen w-screen bg-base-100">
+  <h1>big games</h1>
+
+  <!-- center box -->
+  <Center
+    top={50}
+    left={50}
+    passing={gameState.passing}
+    broken={gameState.heartsBroken}
+    turn={directionToNumber(gameState.turn)}
+    pass={gameState.passDirection}
+  />
+
+  <!-- trick box -->
+  <Trick
+    left={gameState.trick[userLeft.id]}
+    right={gameState.trick[userRight.id]}
+    up={gameState.trick[userUp.id]}
+    down={gameState.trick[me]}
+  />
+
+  <!-- action button box-->
+  <div class="buttonbox-pos flex h-24 w-48 flex-row-reverse p-4">
+    {#each actions as action}
+      <button class="btn btn-lg" on:click={action.handler}>
+        {action.text}
+      </button>
+    {/each}
+  </div>
+
+  <!-- player box -->
+  <div class="handbox-pos h-{CARD.HEIGHT}px" bind:clientWidth={hand_width}>
+    {#each cards as card}
+      <div
+        on:click={(_) => cardclick(card)}
+        class="cardbox card-transitions"
+        style="left: {card.x}px; top: {card.y}px;"
+      >
+        <Card value={card.value} height={CARD.HEIGHT} />
+      </div>
+    {/each}
+  </div>
+  <Me
+    top={80}
+    left={90}
+    name={userMe.username}
+    points={gameState.points[me]}
+    round={gameState.roundPoints[me]}
+  />
+
+  <!-- left box -->
+  <CardOpponentLR top={40} left={10} num={gameState.hands[userLeft.id].length} />
+  <Player
+    top={75}
+    left={10}
+    name={userLeft.username}
+    points={gameState.points[userLeft.id]}
+    round={gameState.roundPoints[userLeft.id]}
+  />
+
+  <!-- right box -->
+  <CardOpponentLR top={40} left={90} num={gameState.hands[userRight.id].length} />
+  <Player
+    top={12}
+    left={90}
+    name={userRight.username}
+    points={gameState.points[userRight.id]}
+    round={gameState.roundPoints[userRight.id]}
+  />
+
+  <!-- up box -->
+  <CardOpponentH top={5} left={50} num={gameState.hands[userUp.id].length} />
+  <Player
+    top={10}
+    left={30}
+    name={userUp.username}
+    points={gameState.points[userUp.id]}
+    round={gameState.roundPoints[userUp.id]}
+  />
+
+  <!-- game over -->
+  <button on:click={(_) => (clickedOver = true)}>end round</button>
+  {#if gameEnd}
+    <Modal bind:showModal={gameEnd} onclose={(_) => goto('/')}>
+      <div class="w-96">
+        <table class="table-auto">
+          <thead>
+            <tr>
+              <th class="w-12"></th>
+              <th class="w-6"></th>
+              <th class="w-12"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each rank as user, index}
+              <tr>
+                <td class="text-xl font-thin">0{index + 1}</td>
+                <td>{user.points}</td>
+                <td>{user.name}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+  {/if}
+</div>
 
 <style>
   .handbox-pos {
@@ -157,84 +271,8 @@
     position-anchor: --hand-box;
   }
   .card-transitions {
-    transition: top 0.1s, left 0.1s;
+    transition:
+      top 0.1s,
+      left 0.1s;
   }
 </style>
-
-<div class='h-screen w-screen bg-base-100'>
-  <h1> big games </h1>
-
-  <!-- center box -->
-  <Center top={50} left={50} 
-          passing={gameState.passing} 
-          broken={gameState.heartsBroken} 
-          turn={directionToNumber(gameState.turn)}
-          pass={gameState.passDirection}/>
-
-  <!-- trick box -->
-  <Trick left={gameState.trick[userLeft.id]}
-         right={gameState.trick[userRight.id]}
-         up={gameState.trick[userUp.id]}
-         down={gameState.trick[me]}/>
-
-  <!-- action button box-->
-  <div class='buttonbox-pos p-4 w-48 h-24 flex flex-row-reverse'>
-    {#each actions as action}
-      <button class='btn btn-lg' on:click={action.handler}>
-        {action.text}
-      </button>
-    {/each}
-  </div>
-
-  <!-- player box -->
-  <div class='handbox-pos h-{CARD.HEIGHT}px' bind:clientWidth={hand_width}>
-    {#each cards as card}
-      <div on:click={_ => cardclick(card)} class='cardbox card-transitions' style='left: {card.x}px; top: {card.y}px;'>
-        <Card value={card.value} height={CARD.HEIGHT}/>
-      </div>
-    {/each}
-  </div>
-  <Me top={80} left={90} name={userMe.username} points={gameState.points[me]} round={gameState.roundPoints[me]}/>
-
-  <!-- left box -->
-  <CardOpponentLR top={40} left={10} num={gameState.hands[userLeft.id].length}/>
-  <Player top={75} left={10} name={userLeft.username}
-    points={gameState.points[userLeft.id]} round={gameState.roundPoints[userLeft.id]}/>
-
-  <!-- right box -->
-  <CardOpponentLR top={40} left={90} num={gameState.hands[userRight.id].length}/>
-  <Player top={12} left={90} name={userRight.username}
-    points={gameState.points[userRight.id]} round={gameState.roundPoints[userRight.id]}/>
-
-  <!-- up box -->
-  <CardOpponentH top={5} left={50} num={gameState.hands[userUp.id].length}/>
-  <Player top={10} left={30} name={userUp.username}
-    points={gameState.points[userUp.id]} round={gameState.roundPoints[userUp.id]}/>
-
-  <!-- game over -->
-  <button on:click={_=>clickedOver = true}>end round</button>
-  {#if gameEnd}
-    <Modal bind:showModal={gameEnd} onclose={_ => goto('/')}>
-      <div class="w-96">
-        <table class="table-auto">
-          <thead>
-            <tr>
-              <th class='w-12'></th>
-              <th class='w-6'></th>
-              <th class='w-12'></th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each rank as user, index}
-              <tr>
-                <td class='text-xl font-thin'>0{index+1}</td>
-                <td>{user.points}</td>
-                <td>{user.name}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </Modal>
-  {/if}
-</div>

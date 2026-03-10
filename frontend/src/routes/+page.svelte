@@ -1,55 +1,57 @@
 <script lang="ts">
-	import type { PageProps } from './$types';
-	import Navbar from '$lib/Navbar.svelte';
-    import { getUser } from '$lib/state.svelte.ts';
-    import { onMount } from 'svelte';
+  import type { PageProps } from './$types';
+  import Navbar from '$lib/Navbar.svelte';
+  import { getUser } from '$lib/state.svelte.ts';
+  import { onMount } from 'svelte';
 
-    onMount(_ => user = getUser());
+  onMount((_) => (user = getUser()));
 
-    let user;
-	let roomJoinModal;
-	let roomCreateModal;
-	let roomCodeInput = '';
+  let user;
+  let roomJoinModal;
+  let roomCreateModal;
+  let roomCodeInput = '';
 </script>
 
-<Navbar {user}/>
+<Navbar {user} />
 <main class="px-48 pt-12">
-	<!-- room join dialog -->
-	<dialog bind:this={roomJoinModal} class="modal">
-		<div class="modal-box">
-			<h3 class="font-bold">Join Room</h3>
-			<input bind:value={roomCodeInput} type="text" class="input my-4" placeholder="Room Code" />
-			<div class="modal-action">
-				<form method="dialog">
-					<button
-						on:click={(_) => (window.location.href = `/room?code=${roomCodeInput}`)}
-						class="btn btn-sm">Join</button
-					>
-					<button class="btn btn-sm">Back</button>
-				</form>
-			</div>
-		</div>
-	</dialog>
+  <!-- room join dialog -->
+  <dialog bind:this={roomJoinModal} class="modal">
+    <div class="modal-box">
+      <h3 class="font-bold">Join Room</h3>
+      <input bind:value={roomCodeInput} type="text" class="input my-4" placeholder="Room Code" />
+      <div class="modal-action">
+        <form method="dialog">
+          <button
+            on:click={(_) => (window.location.href = `/room?code=${roomCodeInput}`)}
+            class="btn btn-sm">Join</button
+          >
+          <button class="btn btn-sm">Back</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
 
-	<!-- room create prompt -->
-	<dialog bind:this={roomCreateModal} class="modal">
-		<div class="modal-box">
-			<h3 class="font-bold">Create Room</h3>
-			<div class="text-xs">Configuration: 20-point games</div>
-			<div class="modal-action">
-				<form method="dialog">
-					<button on:click={(_) => (window.location.href = `/room`)} class="btn btn-sm">Create</button>
-					<button class="btn btn-sm">Back</button>
-				</form>
-			</div>
-		</div>
-	</dialog>
+  <!-- room create prompt -->
+  <dialog bind:this={roomCreateModal} class="modal">
+    <div class="modal-box">
+      <h3 class="font-bold">Create Room</h3>
+      <div class="text-xs">Configuration: 20-point games</div>
+      <div class="modal-action">
+        <form method="dialog">
+          <button on:click={(_) => (window.location.href = `/room`)} class="btn btn-sm"
+            >Create</button
+          >
+          <button class="btn btn-sm">Back</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
 
-	<!-- page -->
-	<h1 class="py-4 text-3xl font-bold">Hearts!</h1>
+  <!-- page -->
+  <h1 class="py-4 text-3xl font-bold">Hearts!</h1>
 
-	<p class="py-4 text-gray-500">a great game to play with friends</p>
+  <p class="py-4 text-gray-500">a great game to play with friends</p>
 
-	<button on:click={(_) => roomJoinModal.showModal()} class="btn btn-sm">Join Room</button>
-	<button on:click={(_) => roomCreateModal.showModal()} class="btn btn-sm">Create Room</button>
+  <button on:click={(_) => roomJoinModal.showModal()} class="btn btn-sm">Join Room</button>
+  <button on:click={(_) => roomCreateModal.showModal()} class="btn btn-sm">Create Room</button>
 </main>
