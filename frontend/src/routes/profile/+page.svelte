@@ -7,15 +7,15 @@ let username = $state("");
 let res = $state<any>(null);
 
 async function getGames() {
-  console.log("hello world!")
+  console.log("hello world!");
   const response = await fetch(API_ADDR + `/game/own`, {
     credentials: 'include'  //send cookies
   });
   const data = await response.json();
-  username = data.username
-  res = data.games
-  console.log(username)
-  console.log(res)
+  username = data.username;
+  res = data.games;
+  console.log(username);
+  console.log(res);
 }
 
 onMount(() => { getGames(); });

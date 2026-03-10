@@ -26,7 +26,6 @@
     let password = $state('');
 
 	const login = async () => {
-
         if (username.length < 3 || password.length < 3) {
             alert('Username and password must be at least 3 characters long.');
             return;
