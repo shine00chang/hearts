@@ -2,34 +2,68 @@
 	import { goto } from "$app/navigation";
 	import { userState } from "../../state.svelte";
     import Navbar from "$lib/Navbar.svelte";
+    import { API_ADDR } from "$lib/configs";
+    
+    const post = async (route: string, body: any) => {
+        const res = await fetch(API_ADDR + route, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body),
+        });
+        let data = {};
+        try {
+            data = await res.text();
+            data = await res.json();
+        } catch {
+        }
+        return [data, res.status];
+    }
 
     let username = $state('');
     let password = $state('');
 
-	const login = () => {
-        // mocking login for now
-        userState.loggedIn = true;
-        userState.name = username;
+	const login = async () => {
 
         if (username.length < 3 || password.length < 3) {
             alert('Username and password must be at least 3 characters long.');
             return;
         }
         
-        // this should try to login, 
-        // if no account, it should recommend signing up
-        // if password wrong, it should give max 5 attempts or something, ratelimited on backend
-        // if successful, it should redirect to the homepage
+        const [data, status] = await post('/user/login', {
+            username,
+            password,
+        })
+        if (status !== 200) {
+            alert(data);
+            return;
+        }
         
+        userState.loggedIn = true;
+        userState.name = username;
         goto('/');
 	};
 
-	const signup = () => {
-        // this should send a request to backend to create account in db
-        // then also log them in and redirect to homepage
-		alert('signup todo');
+	const signup = async () => {
+        if (username.length < 3 || password.length < 3) {
+            alert('Username and password must be at least 3 characters long.');
+            return;
+        }
+        
+        const [data, status] = await post('/user/create', {
+            username,
+            password,
+        })
+        if (status !== 200) {
+            alert(data);
+            return;
+        }
 
-        goto('/')
+        // logs you in as well
+        userState.loggedIn = true;
+        userState.name = username;
+        goto('/');
 	};
 </script>
 
