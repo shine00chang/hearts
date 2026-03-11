@@ -8,6 +8,11 @@
   });
 </script>
 
+<style>
+  .spin {
+    transition: transform 0.1s;
+  }
+</style>
 <div
   style="transform: translate(-50%, -50%); position:absolute; top:40%; left:50%;"
   class="align-center flex h-24 w-24 flex-col place-content-center items-center rounded-lg bg-white"
@@ -20,8 +25,8 @@
     {/if}
   </div>
   {#if passing}
-    <div style="transform: rotate({0.25 * (passturn - 1)}turn)">➜</div>
+    <div style="transform: rotate({0.25 * (passturn - 1)}turn)" class='spin'>➜</div>
   {:else}
-    <div style="transform: rotate({0.25 * (turn - 1)}turn)">➜</div>
+    <div style="transform: rotate({0.25 * (turn - 1)}turn)" class='spin'>➜</div>
   {/if}
 </div>

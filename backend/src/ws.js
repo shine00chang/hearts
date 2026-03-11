@@ -197,6 +197,7 @@ async function handleLeave (io, roomId, userId)
 
 function handlePass (io, roomId, userId, cards) 
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState; 
 
@@ -219,6 +220,7 @@ function handlePass (io, roomId, userId, cards)
 // Testing code
 function fakeplay(io, roomId) 
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState;
   let card = undefined;
@@ -242,6 +244,7 @@ function fakeplay(io, roomId)
 // Swaps cards and emits state
 function pass(io, roomId)
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
@@ -287,6 +290,7 @@ function pass(io, roomId)
 
 function firstTrick(io, roomId) 
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
@@ -306,6 +310,7 @@ function firstTrick(io, roomId)
 
 function handlePlay (io, roomId, userId, card) 
 {
+  if (!rooms.has(roomId)) return;
   console.log('someone played: ', userId, card);
 
   const room = rooms.get(roomId);
@@ -381,6 +386,7 @@ function handlePlay (io, roomId, userId, card)
 
 function trickend(io, roomId) 
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
@@ -449,6 +455,7 @@ function trickend(io, roomId)
 
 async function roundend(io, roomId)
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState;
   const users = room.users;
@@ -517,6 +524,7 @@ async function roundend(io, roomId)
 
 async function gameend(io, roomId)
 {
+  if (!rooms.has(roomId)) return;
   const room = rooms.get(roomId);
   const game = room.gameState;
   const gameId = game.dbGameId;
