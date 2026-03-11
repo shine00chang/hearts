@@ -24,6 +24,33 @@ To start the backend:
 ```
 npm run start  # in ./backend
 ```
+## Postgres Instructions
+If this repository came from a compressed tarball on Gradescope, /backend/.env should already be populated with a database url to a Neon database.
+As such, the following instructions can be safely ignored if /backend/.env is already populated.
+
+Alternatively, if you already have Postgres set up on your computer, you don't need to follow these instructions to set up Postgres.
+You will, however, need to create a database and provide the url to it in /backend/.env in the form: `DATABASE_URL=postgres://...`
+
+### Windows:
+1. Download the PostgreSQL installer from [here](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) and run it.
+2. Set up pgAdmin 4.
+3. Now, construct the URL depending on the info you used to set it up: e.g. mine is `postgres://postgres:<PASSWORD>@localhost:5433/hearts`.
+4. Place this URL in backend/.env: `DATABASE_URL=postgres://...`
+
+### Linux (untested):
+
+1. Install postgres from your package manager:
+```
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+2. Start the service if applicable
+```
+sudo systemctl start postgresql.service
+sudo systemctl enable postgresql.service
+sudo systemctl status postgresql.service
+```
+3. Set up the database with the `psql` CLI
 
 ## Usage & Testing
 Then the following users are already created and have game data available to try out the leaderboard, profile, and search features:
