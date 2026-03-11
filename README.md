@@ -14,7 +14,7 @@ git clone https://github.com/shine00chang/hearts.git
 (cd backend && npm i)
 ```
 The backend will require a connection string to the remote database. This connection string will be included in the submission. <br>
-Place the connection string in `backend/.env` under `DATABASE='<connection string>'`
+Place the connection string in `backend/.env` under `DATABASE_URL='<connection string>'`
 
 To start the frontend:
 ```
@@ -53,7 +53,9 @@ sudo systemctl status postgresql.service
 3. Set up the database with the `psql` CLI
 
 ## Usage & Testing
-Then the following users are already created and have game data available to try out the leaderboard, profile, and search features:
+In the submission, the connection string is already included. 
+As such, the following users are already created and have game data available to try out the leaderboard, profile, and search features:
+
 - username: "mochbot", password: "test"
 - username: "caboozled_pie", password: "test"
 - username: "zzztoj", password: "test"
