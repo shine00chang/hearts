@@ -5,51 +5,28 @@ A web application to play the card game **Hearts**.
 Tech stack: SvelteKit frontend, Node.js backend, PostgreSQL database.
 
 ## Setup Instructions
-First, set up Node.js, npm, and [Postgres](#specific-postgres-instructions). Then, run the following commands to install dependencies.
+To build and host locally, `node.js` (18+ will do) and `npm`. Recommended method is to install [nvm](https://github.com/nvm-sh/nvm).
+
+Then, run the following commands:
 ```
 git clone https://github.com/shine00chang/hearts.git
 (cd frontend && npm i)
 (cd backend && npm i)
 ```
+The backend will require a connection string to the remote database. This connection string will be included in the submission. <br>
+Place the connection string in `backend/.env` under `DATABASE='<connection string>'`
+
 To start the frontend:
 ```
 npm run dev  # in ./frontend
 ```
 To start the backend:
 ```
-npm start  # in ./backend
+npm run start  # in ./backend
 ```
 
-## Specific Postgres Instructions
-If this repository came from a compressed tarball on Gradescope, /backend/.env should already be populated with a database url to a Neon database.
-As such, the following instructions can be safely ignored if /backend/.env is already populated.
-
-Alternatively, if you already have Postgres set up on your computer, you don't need to follow these instructions to set up Postgres.
-You will, however, need to create a database and provide the url to it in /backend/.env in the form: `DATABASE_URL=postgres://...` 
-
-### Windows:
-1. Download the PostgreSQL installer from [here](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) and run it. 
-2. Set up pgAdmin 4. 
-3. Now, construct the URL depending on the info you used to set it up: e.g. mine is `postgres://postgres:<PASSWORD>@localhost:5433/hearts`. 
-4. Place this URL in backend/.env: `DATABASE_URL=postgres://...` 
-
-### Linux (untested):
-
-1. Install postgres from your package manager:
-```
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-```
-2. Start the service if applicable
-```
-sudo systemctl start postgresql.service
-sudo systemctl enable postgresql.service
-sudo systemctl status postgresql.service
-```
-3. Set up the database with the `psql` CLI
-
-## Testing
-If /backend/.env is already populated with a URL, then the following users are already created and have game data available:
+## Usage & Testing
+Then the following users are already created and have game data available to try out the leaderboard, profile, and search features:
 - username: "mochbot", password: "test"
 - username: "caboozled_pie", password: "test"
 - username: "zzztoj", password: "test"
@@ -58,7 +35,15 @@ If /backend/.env is already populated with a URL, then the following users are a
 If one wants to look at /profile, they are encouraged to start with one of these test users to view game data. 
 If one wants to search for the past games of specific users, these users have all participated in at least one game beforehand.
 
-# Internals
+For the convenience of testing, a room under ID "TEST" is available with three bot users to play against.
+Testers are encouraged to play out a full game here.
+Also, the point threshold has been adjusted to 20 instead of 100 to make the game finish quicker.
+If the tester wishes to play in a full, non-bot lobby, the tester must start four distinct browser instances, to have four different session cookies. This is attainable through Chrome, Chrome Incognito, Safari, and Safari Private.
+
+Note: Rooms cannot be rejoined once the game has started, and a player has left. All users are disconnected.
+
+
+# Architecture 
 
 ## Frontend Skeleton
 *Login*
@@ -113,15 +98,12 @@ get-leaderboard() : leaderboard query
 Client -> Server commands:
 - 'ready': player marks themselves as ready
 - 'unready': player marks themselves as not ready
-- 'leave': player explicitly leaves room (if no players are in the room, server delete the room)
 - 'disconnect': player disconnects from the room
 
 Server -> Client commands:
 - 'state': full room state '{ id: roomId, users: Array, readyState: Map }'
 - 'start': start game (all 4 players ready). From this point on, room state should include game state.
-- 'nojoin': client cannot join room
-- 'disconnect': server closes connection
-- 'playerdisconnected': player leaves midgame '{ userId, roomId }'
+- 'error': { message: string }. Sent on any sort of fatal error: user disconnection, party full, etc.
 
 **Game**
 Game state: 
