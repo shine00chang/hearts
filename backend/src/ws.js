@@ -23,6 +23,7 @@ rooms.set("TEST", {
         'cow': true,
     }
 });
+const botnames = ['alice', 'bessie', 'cow'];
 
 const socketIdMap = new Map();
 
@@ -175,6 +176,9 @@ async function handleLeave (io, roomId, userId)
       'error', 
       { message: `player ${user.username} disconnected. game cannot be restarted.` }
     );
+
+    rooms.delete(roomId);
+    return;
   }
 
   // remove user from room
@@ -296,7 +300,8 @@ function firstTrick(io, roomId)
   game.leader = leader;
   
   // Testing code:
-  setTimeout(_ => fakeplay(io, roomId), 3000);
+  if (roomId === 'TEST' && botnames.includes(leader))
+    setTimeout(_ => fakeplay(io, roomId), 3000);
 }
 
 function handlePlay (io, roomId, userId, card) 
@@ -356,7 +361,7 @@ function handlePlay (io, roomId, userId, card)
   game.turn = game.directionMap[(game.directionMap.indexOf(game.turn)+1)%4];
 
   // Testing code
-  if (Object.keys(game.trick).length != 4 && game.turn != 'turtles')
+  if (Object.keys(game.trick).length != 4 && roomId === 'TEST' && botnames.includes(game.turn))
     setTimeout(_ => fakeplay(io, roomId), 1000);
 
   // check trick end
@@ -438,7 +443,7 @@ function trickend(io, roomId)
     return;
   }
 
-  if (game.turn != 'turtles')
+  if (roomId == 'TEST' && botnames.includes(game.turn))
     setTimeout(_ => fakeplay(io, roomId), 1000);
 }
 
@@ -457,7 +462,7 @@ async function roundend(io, roomId)
   for (const u of users) {
     const roundScore = game.roundPoints[u.id];
     await endRound(roundId, u.username, roundScore);
-    game.roundPoints[u.id] = 0;
+    //game.roundPoints[u.id] = 0;
   }
 
   resolvePoints(roomId, threshold);
@@ -477,6 +482,7 @@ async function roundend(io, roomId)
     // NOTE: 20 point limit for testing
     if (Object.values(game.points).some(x => x > 20)) {
       gameend(io, roomId);
+      emitRoomState(io, roomId);
       return;
     }
 
@@ -515,6 +521,7 @@ async function gameend(io, roomId)
   const game = room.gameState;
   const gameId = game.dbGameId;
 
+  game.over = true;
   try {
     // Mark game as done
     await query(

@@ -8,14 +8,7 @@
     if (value.charAt(0) == 'H') return '♥';
     return '?';
   });
-  let number = $derived.by((_) => {
-    return value.slice(1);
-    // if (value.slice(1) == 'A') return 1;
-    // if (value.slice(1) == 'J') return 11;
-    // if (value.slice(1) == 'Q') return 12;
-    // if (value.slice(1) == 'K') return 13;
-    // return parseInt(value.slice(1));
-  });
+  let number = $derived.by((_) => value.slice(1));
   const cardColor = $derived.by((_) => {
     if (value.charAt(0) == 'D') return '#F00';
     if (value.charAt(0) == 'S') return '#000';

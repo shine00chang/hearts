@@ -18,8 +18,7 @@
   let gameState = $derived(roomState.gameState);
 
   // derived states
-  let clickedOver = $state(false);
-  let gameEnd = $derived(gameState.over || clickedOver);
+  let gameEnd = $derived(gameState.over);
   let cards = $derived.by((_) => {
     // generate card graphics from the list of cards
     console.log(gameState);
@@ -108,6 +107,11 @@
         return;
     }
 
+    // if start of round and leader, check clubs
+    if (gameState.leader == me && gameState.hands[me].length == 13)
+      if (card.value != "C2")
+        return;
+
     // if leader, check if broken hearts
     if (gameState.leader == me)
       if (
@@ -145,8 +149,6 @@
 </script>
 
 <div class="h-screen w-screen bg-base-100">
-  <h1>big games</h1>
-
   <!-- center box -->
   <Center
     top={50}
@@ -225,7 +227,6 @@
   />
 
   <!-- game over -->
-  <button on:click={(_) => (clickedOver = true)}>end round</button>
   {#if gameEnd}
     <Modal bind:showModal={gameEnd} onclose={(_) => goto('/')}>
       <div class="w-96">
